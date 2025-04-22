@@ -15,8 +15,8 @@ bool check_win(int x, int y, board b)
     int acc, xa, ya;
 
     // Column
-    acc = 0;
-    ya = y;
+    acc = 1;
+    ya = y + 1;
     while (ya < BOARD_SIZE && b[ya++][x])
         if (++acc == WIN_CONDITION)
             return true;
@@ -26,8 +26,8 @@ bool check_win(int x, int y, board b)
             return true;
 
     // Row
-    acc = 0;
-    xa = x;
+    acc = 1;
+    xa = x + 1;
     while (xa < BOARD_SIZE && b[y][xa++])
         if (++acc == WIN_CONDITION)
             return true;
@@ -39,9 +39,9 @@ bool check_win(int x, int y, board b)
     // Diagonal
     if (BOARD_SIZE - abs(x - y) >= WIN_CONDITION)
     {
-        acc = 0;
-        xa = x;
-        ya = y;
+        acc = 1;
+        xa = x + 1;
+        ya = y + 1;
         while (xa < BOARD_SIZE && ya < BOARD_SIZE && b[ya++][xa++])
             if (++acc == WIN_CONDITION)
                 return true;
@@ -55,9 +55,9 @@ bool check_win(int x, int y, board b)
     // Anti-diagonal
     if (BOARD_SIZE - abs(x + y - BOARD_SIZE + 1) >= WIN_CONDITION)
     {
-        acc = 0;
-        xa = x;
-        ya = y;
+        acc = 1;
+        xa = x + 1;
+        ya = y - 1;
         while (xa < BOARD_SIZE && 0 <= ya && b[ya--][xa++])
             if (++acc == WIN_CONDITION)
                 return true;
