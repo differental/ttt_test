@@ -6,61 +6,75 @@
 
 #define BOARD_SIZE 20
 #define BOARD_SIZE_SQUARED (BOARD_SIZE * BOARD_SIZE)
+
 #define WIN_CONDITION 10
+typedef bool board[BOARD_SIZE][BOARD_SIZE];
 
-typedef enum
+bool check_win(int x, int y, board b)
 {
-    NONE = 0,
-    CIRCLE = 1,
-    CROSS = 2
-} cell;
-typedef cell board[BOARD_SIZE][BOARD_SIZE];
+    int acc, xa, ya;
 
-bool check_line(cell p, int n, int dx, int dy, int x, int y, board* b)
-{
-    for (int acc = 0; 0 < n; n--, x += dx, y += dy)
-    {
-        if ((*b)[y][x] == p)
-        {
-            acc++;
-            if (acc == WIN_CONDITION)
-                return true;
-        }
-        else
-        {
-            acc = 0;
-            if (n - 1 < WIN_CONDITION)
-                return false;
-        }
-    }
-    return false;
-}
-
-bool check_win(cell p, int x, int y, board* b)
-{
     // Column
-    if (check_line(p, BOARD_SIZE, 0, 1, x, 0, b))
-        return true;
+    acc = 0;
+    ya = y;
+    while (ya < BOARD_SIZE && b[ya++][x])
+        if (++acc == WIN_CONDITION)
+            return true;
+    ya = y - 1;
+    while (0 <= ya && b[ya--][x])
+        if (++acc == WIN_CONDITION)
+            return true;
+
     // Row
-    if (check_line(p, BOARD_SIZE, 1, 0, 0, y, b))
-        return true;
+    acc = 0;
+    xa = x;
+    while (xa < BOARD_SIZE && b[y][xa++])
+        if (++acc == WIN_CONDITION)
+            return true;
+    xa = x - 1;
+    while (0 <= xa && b[y][xa--])
+        if (++acc == WIN_CONDITION)
+            return true;
+
     // Diagonal
-    int diag_len = BOARD_SIZE - abs(x - y);
-    int d = (x < y) ? x : y;
-    if (diag_len >= WIN_CONDITION && check_line(p, diag_len, 1, 1, x - d, y - d, b))
-        return true;
+    if (BOARD_SIZE - abs(x - y) >= WIN_CONDITION)
+    {
+        acc = 0;
+        xa = x;
+        ya = y;
+        while (xa < BOARD_SIZE && ya < BOARD_SIZE && b[ya++][xa++])
+            if (++acc == WIN_CONDITION)
+                return true;
+        xa = x - 1;
+        ya = y - 1;
+        while (0 <= xa && 0 <= ya && b[ya--][xa--])
+            if (++acc == WIN_CONDITION)
+                return true;
+    }
+
     // Anti-diagonal
-    diag_len = BOARD_SIZE - abs(x + y - BOARD_SIZE + 1);
-    d = ((BOARD_SIZE - 1 - x) < y) ? (BOARD_SIZE - 1 - x) : y;
-    if (diag_len >= WIN_CONDITION && check_line(p, diag_len, -1, 1, x + d, y - d, b))
-        return true;
+    if (BOARD_SIZE - abs(x + y - BOARD_SIZE + 1) >= WIN_CONDITION)
+    {
+        acc = 0;
+        xa = x;
+        ya = y;
+        while (xa < BOARD_SIZE && 0 <= ya && b[ya--][xa++])
+            if (++acc == WIN_CONDITION)
+                return true;
+        xa = x - 1;
+        ya = y + 1;
+        while (0 <= xa && ya < BOARD_SIZE && b[ya++][xa--])
+            if (++acc == WIN_CONDITION)
+                return true;
+    }
+
     return false;
 }
 
-void shuffle(int *a)
+void shuffle(int *a, int n)
 {
     // Fisher-Yates shuffle
-    for (int i = BOARD_SIZE_SQUARED - 1; i > 0; i--)
+    for (int i = n - 1; i > 0; i--)
     {
         int k = rand() % (i + 1);
         int temp = a[k];
@@ -69,47 +83,58 @@ void shuffle(int *a)
     }
 }
 
-int free_cells[BOARD_SIZE_SQUARED];
-cell do_game(void)
+int do_game()
 {
-    board b = {NONE};
-    int nn = BOARD_SIZE_SQUARED;
-    for (int i = 0; i < nn; i++)
+
+    int free_cells[BOARD_SIZE_SQUARED];
+    for (int i = 0; i < BOARD_SIZE_SQUARED; i++)
         free_cells[i] = i;
 
-    shuffle(free_cells);
+    shuffle(free_cells, BOARD_SIZE_SQUARED);
 
-    cell res = NONE;
-    for (int i = 0; i < nn; i++)
+    board os = {false};
+    board xs = {false};
+
+    for (int i = 0; i < BOARD_SIZE_SQUARED; i++)
     {
-        int x = free_cells[i] / BOARD_SIZE;
-        int y = free_cells[i] % BOARD_SIZE;
-        cell p = (i % 2 == 0) ? CIRCLE : CROSS;
-        b[y][x] = p;
+        int x = free_cells[i] % BOARD_SIZE;
+        int y = free_cells[i] / BOARD_SIZE;
+        if (i % 2 == 0)
+        {
+            os[y][x] = true;
 
-        if (check_win(p, x, y, &b))
-            return p;
+            if (check_win(x, y, os))
+                return 0;
+        }
+        else
+        {
+            xs[y][x] = true;
+
+            if (check_win(x, y, xs))
+                return 1;
+        }
     }
-    return NONE;
+    return -1;
 }
 
-int main(void)
+int main()
 {
-    srand(2134);
-    int n = 100000;
+    srand(1729);
+    int n = 10000;
     int o = 0, x = 0, draw = 0;
 
     for (int i = 0; i < n; i++)
     {
-        switch (do_game())
+        int res = do_game();
+        switch (res)
         {
-        case CIRCLE:
+        case 0:
             o++;
             break;
-        case CROSS:
+        case 1:
             x++;
             break;
-        case NONE:
+        case -1:
             draw++;
             break;
         }
