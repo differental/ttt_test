@@ -2,32 +2,28 @@
 import random
 import time
 import cython
-from array import array
 
-# Constants
-BOARD_SIZE = 20
-BOARD_SIZE_SQUARED = BOARD_SIZE * BOARD_SIZE
-WIN_CONDITION = 10
+BOARD_SIZE = cython.declare(cython.int, 20)
+NUM_DIAGONALS = cython.declare(cython.int, 2 * BOARD_SIZE - 1)
+WIN_CONDITION = cython.declare(cython.int, 10)
 
 
 @cython.cclass
 class Board:
     board: list[list[bool]]
-    cols: array
-    rows: array
-    diag: array
-    anti: array
+    cols: list[int]
+    rows: list[int]
+    diag: list[int]
+    anti: list[int]
 
     def __init__(self):
-        # Initialize 2D board with Python lists (since array doesn't support 2D)
         self.board = [[False] * BOARD_SIZE for _ in range(BOARD_SIZE)]
-        # Use array for 1D data
-        self.cols = array("i", [0] * BOARD_SIZE)
-        self.rows = array("i", [0] * BOARD_SIZE)
-        self.diag = array("i", [0] * (2 * BOARD_SIZE - 1))
-        self.anti = array("i", [0] * (2 * BOARD_SIZE - 1))
+        self.cols = [0] * BOARD_SIZE
+        self.rows = [0] * BOARD_SIZE
+        self.diag = [0] * NUM_DIAGONALS
+        self.anti = [0] * NUM_DIAGONALS
 
-    @cython.locals(x=cython.int, y=cython.int)
+    @cython.locals(x=int, y=int)
     def update(self, x: int, y: int) -> None:
         self.board[y][x] = True
         self.cols[x] += 1
@@ -35,9 +31,7 @@ class Board:
         self.diag[x - y + BOARD_SIZE - 1] += 1
         self.anti[x + y] += 1
 
-    @cython.locals(
-        x=cython.int, y=cython.int, acc=cython.int, xa=cython.int, ya=cython.int
-    )
+    @cython.locals(x=int, y=int, acc=int, xa=int, ya=int)
     def check_win(self, x: int, y: int) -> bool:
         # Column
         if self.cols[x] >= WIN_CONDITION:
@@ -114,15 +108,15 @@ class Board:
         return False
 
 
-@cython.locals(i=cython.int, x=cython.int, y=cython.int)
+@cython.locals(i=int, x=int, y=int)
 def do_game() -> int:
-    free_cells = list(range(BOARD_SIZE_SQUARED))
+    free_cells = list(range(BOARD_SIZE * BOARD_SIZE))
     random.shuffle(free_cells)
 
     circle = Board()
     cross = Board()
 
-    for i in range(BOARD_SIZE_SQUARED):
+    for i in range(BOARD_SIZE * BOARD_SIZE):
         x = free_cells[i] % BOARD_SIZE
         y = free_cells[i] // BOARD_SIZE
 
@@ -138,7 +132,7 @@ def do_game() -> int:
     return -1
 
 
-@cython.locals(n=cython.int, o=cython.int, x=cython.int, draw=cython.int)
+@cython.locals(n=int, o=int, x=int, draw=int)
 def main() -> None:
     random.seed(1729)
 
