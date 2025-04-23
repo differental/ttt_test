@@ -1,7 +1,6 @@
 // Credit: Jeremy Chen (gh:intgrah)
 
 #include <stdio.h>
-#include <stdlib.h>
 #include <stdbool.h>
 #include <time.h>
 
@@ -21,7 +20,7 @@ typedef struct
 void board_init(Board *b)
 {
     *b = (Board){
-        .board = {false},
+        .board = {{false}},
         .cols = {0},
         .rows = {0},
         .diag = {0},
@@ -47,11 +46,11 @@ bool check_win(Board *b, int x, int y)
         acc = 1;
         ya = y + 1;
         while (ya < BOARD_SIZE && b->board[ya++][x])
-            if (++acc == WIN_CONDITION)
+            if (++acc >= WIN_CONDITION)
                 return true;
         ya = y - 1;
         while (0 <= ya && b->board[ya--][x])
-            if (++acc == WIN_CONDITION)
+            if (++acc >= WIN_CONDITION)
                 return true;
     }
 
@@ -61,11 +60,11 @@ bool check_win(Board *b, int x, int y)
         acc = 1;
         xa = x + 1;
         while (xa < BOARD_SIZE && b->board[y][xa++])
-            if (++acc == WIN_CONDITION)
+            if (++acc >= WIN_CONDITION)
                 return true;
         xa = x - 1;
         while (0 <= xa && b->board[y][xa--])
-            if (++acc == WIN_CONDITION)
+            if (++acc >= WIN_CONDITION)
                 return true;
     }
 
@@ -76,12 +75,12 @@ bool check_win(Board *b, int x, int y)
         xa = x + 1;
         ya = y + 1;
         while (xa < BOARD_SIZE && ya < BOARD_SIZE && b->board[ya++][xa++])
-            if (++acc == WIN_CONDITION)
+            if (++acc >= WIN_CONDITION)
                 return true;
         xa = x - 1;
         ya = y - 1;
         while (0 <= xa && 0 <= ya && b->board[ya--][xa--])
-            if (++acc == WIN_CONDITION)
+            if (++acc >= WIN_CONDITION)
                 return true;
     }
 
@@ -92,16 +91,26 @@ bool check_win(Board *b, int x, int y)
         xa = x + 1;
         ya = y - 1;
         while (xa < BOARD_SIZE && 0 <= ya && b->board[ya--][xa++])
-            if (++acc == WIN_CONDITION)
+            if (++acc >= WIN_CONDITION)
                 return true;
         xa = x - 1;
         ya = y + 1;
         while (0 <= xa && ya < BOARD_SIZE && b->board[ya++][xa--])
-            if (++acc == WIN_CONDITION)
+            if (++acc >= WIN_CONDITION)
                 return true;
     }
 
     return false;
+}
+
+unsigned int rand()
+{
+    // Xorshift
+    static unsigned int x = 3952629967;
+    x ^= x << 13;
+    x ^= x >> 17;
+    x ^= x << 5;
+    return x;
 }
 
 void shuffle(int *a, int n)
@@ -151,8 +160,6 @@ int do_game()
 
 int main()
 {
-    srand(1729);
-
     int n = 10000;
     int o = 0, x = 0, draw = 0;
 
