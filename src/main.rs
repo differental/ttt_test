@@ -28,7 +28,7 @@ impl Board {
         self.board[y][x] = true;
         self.cols[x] += 1;
         self.rows[y] += 1;
-        self.diag[x - y + BOARD_SIZE - 1] += 1;
+        self.diag[BOARD_SIZE - 1 + x - y] += 1;
         self.anti[x + y] += 1;
     }
 
@@ -80,7 +80,7 @@ impl Board {
         }
 
         // Diagonal
-        if self.diag[x as usize - y as usize + BOARD_SIZE - 1] >= WIN_CONDITION {
+        if self.diag[BOARD_SIZE - 1 + x as usize - y as usize] >= WIN_CONDITION {
             acc = 1;
             xa = x + 1;
             ya = y + 1;
