@@ -6,35 +6,41 @@
 
 #define BOARD_SIZE 20
 #define BOARD_SIZE_SQUARED (BOARD_SIZE * BOARD_SIZE)
-
 #define WIN_CONDITION 10
+
 typedef bool board[BOARD_SIZE][BOARD_SIZE];
 
-bool check_win(int x, int y, board b)
+bool check_win(int x, int y, board b, int *cols, int *rows)
 {
     int acc, xa, ya;
 
     // Column
-    acc = 1;
-    ya = y + 1;
-    while (ya < BOARD_SIZE && b[ya++][x])
-        if (++acc == WIN_CONDITION)
-            return true;
-    ya = y - 1;
-    while (0 <= ya && b[ya--][x])
-        if (++acc == WIN_CONDITION)
-            return true;
+    if (cols[x] >= WIN_CONDITION)
+    {
+        acc = 1;
+        ya = y + 1;
+        while (ya < BOARD_SIZE && b[ya++][x])
+            if (++acc == WIN_CONDITION)
+                return true;
+        ya = y - 1;
+        while (0 <= ya && b[ya--][x])
+            if (++acc == WIN_CONDITION)
+                return true;
+    }
 
     // Row
-    acc = 1;
-    xa = x + 1;
-    while (xa < BOARD_SIZE && b[y][xa++])
-        if (++acc == WIN_CONDITION)
-            return true;
-    xa = x - 1;
-    while (0 <= xa && b[y][xa--])
-        if (++acc == WIN_CONDITION)
-            return true;
+    if (rows[y] >= WIN_CONDITION)
+    {
+        acc = 1;
+        xa = x + 1;
+        while (xa < BOARD_SIZE && b[y][xa++])
+            if (++acc == WIN_CONDITION)
+                return true;
+        xa = x - 1;
+        while (0 <= xa && b[y][xa--])
+            if (++acc == WIN_CONDITION)
+                return true;
+    }
 
     // Diagonal
     if (BOARD_SIZE - abs(x - y) >= WIN_CONDITION)
@@ -92,6 +98,10 @@ int do_game()
 
     shuffle(free_cells, BOARD_SIZE_SQUARED);
 
+    int ocols[BOARD_SIZE] = {0};
+    int orows[BOARD_SIZE] = {0};
+    int xcols[BOARD_SIZE] = {0};
+    int xrows[BOARD_SIZE] = {0};
     board os = {false};
     board xs = {false};
 
@@ -103,14 +113,14 @@ int do_game()
         {
             os[y][x] = true;
 
-            if (check_win(x, y, os))
+            if (check_win(x, y, os, ocols, orows))
                 return 0;
         }
         else
         {
             xs[y][x] = true;
 
-            if (check_win(x, y, xs))
+            if (check_win(x, y, xs, xcols, xrows))
                 return 1;
         }
     }
@@ -120,6 +130,15 @@ int do_game()
 int main()
 {
     srand(1729);
+
+    // Debug: Print first 10 random numbers to verify sequence
+    printf("First 10 random numbers:\n");
+    for (int i = 0; i < 10; i++)
+    {
+        printf("%d ", rand());
+    }
+    printf("\n");
+
     int n = 10000;
     int o = 0, x = 0, draw = 0;
 
