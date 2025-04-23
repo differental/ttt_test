@@ -4,13 +4,21 @@ const WIN_CONDITION = 10;
 
 class Board {
     constructor() {
-        this.board = Array.from({ length: BOARD_SIZE }, () =>
-            Array(BOARD_SIZE).fill(false)
-        );
-        this.cols = Array(BOARD_SIZE).fill(0);
-        this.rows = Array(BOARD_SIZE).fill(0);
-        this.diag = Array(2 * BOARD_SIZE - 1).fill(0);
-        this.anti = Array(2 * BOARD_SIZE - 1).fill(0);
+        this.board = Array(BOARD_SIZE);
+        for (let i = 0; i < BOARD_SIZE; i++) this.board[i] = Array(BOARD_SIZE);
+
+        this.cols = Array(BOARD_SIZE);
+        this.rows = Array(BOARD_SIZE);
+        this.diag = Array(2 * BOARD_SIZE - 1);
+        this.anti = Array(2 * BOARD_SIZE - 1);
+    }
+
+    clear() {
+        for (let i = 0; i < BOARD_SIZE; i++) this.board[i].fill(false);
+        this.cols.fill(0);
+        this.rows.fill(0);
+        this.diag.fill(0);
+        this.anti.fill(0);
     }
 
     update(x, y) {
@@ -77,37 +85,41 @@ class Board {
     }
 }
 
+let x = 172916342314;
+function rand() {
+    // Xorshift
+    x ^= x << 13;
+    x ^= x >> 17;
+    x ^= x << 5;
+    x &= 0xffffffff;
+    return x;
+}
+
 function shuffle(array) {
+    // Fisher-Yates
     for (let i = array.length - 1; i > 0; i--) {
-        let j = Math.floor(Math.random() * (i + 1));
-        [array[i], array[j]] = [array[j], array[i]];
+        const m = i + 1;
+        const j = Math.abs(rand()) % m;
+        const temp = array[i];
+        array[i] = array[j];
+        array[j] = temp;
     }
 }
 
-function do_game() {
-    const free_cells = Array(BOARD_SIZE_SQUARED)
-        .fill(0)
-        .map((_, i) => i);
+function do_game(free_cells, circle, cross) {
+    for (let i = 0; i < BOARD_SIZE_SQUARED; i++) free_cells[i] = i;
     shuffle(free_cells);
 
-    const circle = new Board();
-    const cross = new Board();
+    circle.clear();
+    cross.clear();
 
     for (let i = 0; i < BOARD_SIZE_SQUARED; i++) {
         const x = free_cells[i] % BOARD_SIZE;
-        const y = Math.floor(free_cells[i] / BOARD_SIZE);
-
-        if (i % 2 === 0) {
-            circle.update(x, y);
-            if (circle.check_win(x, y)) {
-                return 0;
-            }
-        } else {
-            cross.update(x, y);
-            if (cross.check_win(x, y)) {
-                return 1;
-            }
-        }
+        const y = (free_cells[i] - x) / BOARD_SIZE;
+        const player = i % 2;
+        const board = player === 0 ? circle : cross;
+        board.update(x, y);
+        if (board.check_win(x, y)) return player;
     }
 
     return -1;
@@ -119,16 +131,24 @@ function main() {
     let x = 0;
     let draw = 0;
 
+    const free_cells = Array(BOARD_SIZE_SQUARED);
+    const circle = new Board();
+    const cross = new Board();
+
     const start = performance.now();
 
     for (let i = 0; i < n; i++) {
-        const res = do_game();
-        if (res === 0) {
-            o += 1;
-        } else if (res === 1) {
-            x += 1;
-        } else {
-            draw += 1;
+        const res = do_game(free_cells, circle, cross);
+        switch (res) {
+            case 0:
+                o += 1;
+                break;
+            case 1:
+                x += 1;
+                break;
+            case -1:
+                draw += 1;
+                break;
         }
     }
 
