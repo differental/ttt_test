@@ -1,15 +1,16 @@
-use rand::seq::SliceRandom;
+use rand::{SeedableRng, seq::SliceRandom};
 
 const BOARD_SIZE: usize = 20;
 const BOARD_SIZE_SQUARED: usize = BOARD_SIZE * BOARD_SIZE;
+const NUM_DIAGONALS: usize = 2 * BOARD_SIZE - 1;
 const WIN_CONDITION: usize = 10;
 
 struct Board {
     board: [[bool; BOARD_SIZE]; BOARD_SIZE],
     cols: [usize; BOARD_SIZE],
     rows: [usize; BOARD_SIZE],
-    diag: [usize; 2 * BOARD_SIZE - 1],
-    anti: [usize; 2 * BOARD_SIZE - 1],
+    diag: [usize; NUM_DIAGONALS],
+    anti: [usize; NUM_DIAGONALS],
 }
 
 impl Board {
@@ -17,8 +18,8 @@ impl Board {
         Self {
             cols: [0; BOARD_SIZE],
             rows: [0; BOARD_SIZE],
-            diag: [0; 2 * BOARD_SIZE - 1],
-            anti: [0; 2 * BOARD_SIZE - 1],
+            diag: [0; NUM_DIAGONALS],
+            anti: [0; NUM_DIAGONALS],
             board: [[false; BOARD_SIZE]; BOARD_SIZE],
         }
     }
@@ -140,7 +141,7 @@ enum Player {
     Cross,
 }
 
-fn do_game(rng: &mut rand::rngs::ThreadRng) -> Option<Player> {
+fn do_game(rng: &mut rand::rngs::SmallRng) -> Option<Player> {
     let mut circle = Board::new();
     let mut cross = Board::new();
     let mut free_cells: Vec<usize> = (0..BOARD_SIZE_SQUARED).collect();
@@ -172,7 +173,7 @@ fn do_game(rng: &mut rand::rngs::ThreadRng) -> Option<Player> {
 }
 
 fn main() {
-    let mut rng = rand::rng();
+    let mut rng = rand::rngs::SmallRng::seed_from_u64(1729);
 
     let n = 10000;
     let mut o = 0;
