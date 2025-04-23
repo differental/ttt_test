@@ -150,4 +150,4 @@ let () =
   done;
   let duration = Sys.time () -. start in
   Format.printf "O/X/Draw: %d/%d/%d\n" !o !x !draw;
-  Format.printf "Time taken: %f milliseconds\n" (duration *. 1000.0)
+  Format.printf "Time taken: %d ms\n" (int_of_float (duration *. 1000.0))
