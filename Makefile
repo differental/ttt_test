@@ -18,6 +18,11 @@ ocaml:
 	rm -f ttt.cmx
 	rm -f ttt.o
 
+java:
+	javac -Xlint -g:none ttt.java
+	java ttt
+	rm -f ttt.class
+
 python:
 	python3 ttt.py
 
