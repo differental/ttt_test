@@ -3,73 +3,100 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <time.h>
 
 #define BOARD_SIZE 20
 #define BOARD_SIZE_SQUARED (BOARD_SIZE * BOARD_SIZE)
 #define WIN_CONDITION 10
 
-typedef bool board[BOARD_SIZE][BOARD_SIZE];
+typedef struct
+{
+    bool board[BOARD_SIZE][BOARD_SIZE];
+    int cols[BOARD_SIZE];
+    int rows[BOARD_SIZE];
+    int diag[2 * BOARD_SIZE - 1];
+    int anti[2 * BOARD_SIZE - 1];
+} Board;
 
-bool check_win(int x, int y, board b, int *cols, int *rows)
+void board_init(Board *b)
+{
+    *b = (Board){
+        .board = {false},
+        .cols = {0},
+        .rows = {0},
+        .diag = {0},
+        .anti = {0}};
+}
+
+void board_update(Board *b, int x, int y)
+{
+    b->board[y][x] = true;
+    b->cols[x]++;
+    b->rows[y]++;
+    b->diag[x - y + BOARD_SIZE - 1]++;
+    b->anti[x + y]++;
+}
+
+bool check_win(Board *b, int x, int y)
 {
     int acc, xa, ya;
 
     // Column
-    if (cols[x] >= WIN_CONDITION)
+    if (b->cols[x] >= WIN_CONDITION)
     {
         acc = 1;
         ya = y + 1;
-        while (ya < BOARD_SIZE && b[ya++][x])
+        while (ya < BOARD_SIZE && b->board[ya++][x])
             if (++acc == WIN_CONDITION)
                 return true;
         ya = y - 1;
-        while (0 <= ya && b[ya--][x])
+        while (0 <= ya && b->board[ya--][x])
             if (++acc == WIN_CONDITION)
                 return true;
     }
 
     // Row
-    if (rows[y] >= WIN_CONDITION)
+    if (b->rows[y] >= WIN_CONDITION)
     {
         acc = 1;
         xa = x + 1;
-        while (xa < BOARD_SIZE && b[y][xa++])
+        while (xa < BOARD_SIZE && b->board[y][xa++])
             if (++acc == WIN_CONDITION)
                 return true;
         xa = x - 1;
-        while (0 <= xa && b[y][xa--])
+        while (0 <= xa && b->board[y][xa--])
             if (++acc == WIN_CONDITION)
                 return true;
     }
 
     // Diagonal
-    if (BOARD_SIZE - abs(x - y) >= WIN_CONDITION)
+    if (b->diag[x - y + BOARD_SIZE - 1] >= WIN_CONDITION)
     {
         acc = 1;
         xa = x + 1;
         ya = y + 1;
-        while (xa < BOARD_SIZE && ya < BOARD_SIZE && b[ya++][xa++])
+        while (xa < BOARD_SIZE && ya < BOARD_SIZE && b->board[ya++][xa++])
             if (++acc == WIN_CONDITION)
                 return true;
         xa = x - 1;
         ya = y - 1;
-        while (0 <= xa && 0 <= ya && b[ya--][xa--])
+        while (0 <= xa && 0 <= ya && b->board[ya--][xa--])
             if (++acc == WIN_CONDITION)
                 return true;
     }
 
     // Anti-diagonal
-    if (BOARD_SIZE - abs(x + y - BOARD_SIZE + 1) >= WIN_CONDITION)
+    if (b->anti[x + y] >= WIN_CONDITION)
     {
         acc = 1;
         xa = x + 1;
         ya = y - 1;
-        while (xa < BOARD_SIZE && 0 <= ya && b[ya--][xa++])
+        while (xa < BOARD_SIZE && 0 <= ya && b->board[ya--][xa++])
             if (++acc == WIN_CONDITION)
                 return true;
         xa = x - 1;
         ya = y + 1;
-        while (0 <= xa && ya < BOARD_SIZE && b[ya++][xa--])
+        while (0 <= xa && ya < BOARD_SIZE && b->board[ya++][xa--])
             if (++acc == WIN_CONDITION)
                 return true;
     }
@@ -91,36 +118,31 @@ void shuffle(int *a, int n)
 
 int do_game()
 {
-
     int free_cells[BOARD_SIZE_SQUARED];
     for (int i = 0; i < BOARD_SIZE_SQUARED; i++)
         free_cells[i] = i;
 
     shuffle(free_cells, BOARD_SIZE_SQUARED);
 
-    int ocols[BOARD_SIZE] = {0};
-    int orows[BOARD_SIZE] = {0};
-    int xcols[BOARD_SIZE] = {0};
-    int xrows[BOARD_SIZE] = {0};
-    board os = {false};
-    board xs = {false};
+    Board circle, cross;
+    board_init(&circle);
+    board_init(&cross);
 
     for (int i = 0; i < BOARD_SIZE_SQUARED; i++)
     {
         int x = free_cells[i] % BOARD_SIZE;
         int y = free_cells[i] / BOARD_SIZE;
+
         if (i % 2 == 0)
         {
-            os[y][x] = true;
-
-            if (check_win(x, y, os, ocols, orows))
+            board_update(&circle, x, y);
+            if (check_win(&circle, x, y))
                 return 0;
         }
         else
         {
-            xs[y][x] = true;
-
-            if (check_win(x, y, xs, xcols, xrows))
+            board_update(&cross, x, y);
+            if (check_win(&cross, x, y))
                 return 1;
         }
     }
@@ -131,16 +153,10 @@ int main()
 {
     srand(1729);
 
-    // Debug: Print first 10 random numbers to verify sequence
-    printf("First 10 random numbers:\n");
-    for (int i = 0; i < 10; i++)
-    {
-        printf("%d ", rand());
-    }
-    printf("\n");
-
     int n = 10000;
     int o = 0, x = 0, draw = 0;
+
+    clock_t start = clock();
 
     for (int i = 0; i < n; i++)
     {
@@ -159,6 +175,10 @@ int main()
         }
     }
 
+    clock_t end = clock();
+    double time_taken = ((double)(end - start)) / CLOCKS_PER_SEC;
+
     printf("O/X/Draw: %d/%d/%d\n", o, x, draw);
+    printf("Time taken: %d ms\n", (int)(time_taken * 1000));
     return 0;
 }
