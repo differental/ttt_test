@@ -135,7 +135,7 @@ function main() {
     const end = performance.now();
 
     console.log(`O/X/Draw: ${o}/${x}/${draw}`);
-    console.log(`Time taken: ${end - start} ms`);
+    console.log(`Time taken: ${Math.round(end - start)} ms`);
 }
 
 main();
