@@ -5,15 +5,15 @@
 #include <random>
 #include <vector>
 
-const size_t BOARD_SIZE = 20;
-const size_t BOARD_SIZE_SQUARED = BOARD_SIZE * BOARD_SIZE;
-const size_t WIN_CONDITION = 10;
+const int BOARD_SIZE = 20;
+const int BOARD_SIZE_SQUARED = BOARD_SIZE * BOARD_SIZE;
+const int WIN_CONDITION = 10;
 
 class Board
 {
     using BoardArray = std::array<std::array<bool, BOARD_SIZE>, BOARD_SIZE>;
-    using CountArray = std::array<size_t, BOARD_SIZE>;
-    using DiagArray = std::array<size_t, 2 * BOARD_SIZE - 1>;
+    using CountArray = std::array<int, BOARD_SIZE>;
+    using DiagArray = std::array<int, 2 * BOARD_SIZE - 1>;
 
     BoardArray board{};
     CountArray cols{};
@@ -35,18 +35,14 @@ public:
 
     bool check_win(size_t x, size_t y) const
     {
-        size_t acc, xa, ya;
-
         // Column
         if (cols[x] >= WIN_CONDITION)
         {
-            acc = 1;
-            ya = y + 1;
-            while (ya < BOARD_SIZE && board[ya++][x])
+            int acc = 1;
+            for (int ya = y; ++ya < BOARD_SIZE && board[ya][x];)
                 if (++acc >= WIN_CONDITION)
                     return true;
-            ya = y - 1;
-            while (ya < BOARD_SIZE && board[ya--][x])
+            for (int ya = y; 0 <= --ya && board[ya][x];)
                 if (++acc >= WIN_CONDITION)
                     return true;
         }
@@ -54,13 +50,11 @@ public:
         // Row
         if (rows[y] >= WIN_CONDITION)
         {
-            acc = 1;
-            xa = x + 1;
-            while (xa < BOARD_SIZE && board[y][xa++])
+            int acc = 1;
+            for (int xa = x; ++xa < BOARD_SIZE && board[y][xa];)
                 if (++acc >= WIN_CONDITION)
                     return true;
-            xa = x - 1;
-            while (xa < BOARD_SIZE && board[y][xa--])
+            for (int xa = x; 0 <= --xa && board[y][xa];)
                 if (++acc >= WIN_CONDITION)
                     return true;
         }
@@ -68,15 +62,11 @@ public:
         // Diagonal
         if (diag[x - y + BOARD_SIZE - 1] >= WIN_CONDITION)
         {
-            acc = 1;
-            xa = x + 1;
-            ya = y + 1;
-            while (xa < BOARD_SIZE && ya < BOARD_SIZE && board[ya++][xa++])
+            int acc = 1;
+            for (int xa = x, ya = y; ++xa < BOARD_SIZE && ++ya < BOARD_SIZE && board[ya][xa];)
                 if (++acc >= WIN_CONDITION)
                     return true;
-            xa = x - 1;
-            ya = y - 1;
-            while (xa < BOARD_SIZE && ya < BOARD_SIZE && board[ya--][xa--])
+            for (int xa = x, ya = y; 0 <= --xa && 0 <= --ya && board[ya][xa];)
                 if (++acc >= WIN_CONDITION)
                     return true;
         }
@@ -84,15 +74,11 @@ public:
         // Anti-diagonal
         if (anti[x + y] >= WIN_CONDITION)
         {
-            acc = 1;
-            xa = x + 1;
-            ya = y - 1;
-            while (xa < BOARD_SIZE && ya < BOARD_SIZE && board[ya--][xa++])
+            int acc = 1;
+            for (int xa = x, ya = y; ++xa < BOARD_SIZE && 0 <= --ya && board[ya][xa];)
                 if (++acc >= WIN_CONDITION)
                     return true;
-            xa = x - 1;
-            ya = y + 1;
-            while (xa < BOARD_SIZE && ya < BOARD_SIZE && board[ya++][xa--])
+            for (int xa = x, ya = y; 0 <= --xa && ++ya < BOARD_SIZE && board[ya][xa];)
                 if (++acc >= WIN_CONDITION)
                     return true;
         }
