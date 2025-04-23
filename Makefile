@@ -1,7 +1,7 @@
 all: rust cpp c
 
 rust:
-	cargo build --release
+	cargo build --profile release-prod
 
 cpp:
 	g++ -O3 ttt.cc -o ttt
