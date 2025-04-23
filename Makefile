@@ -8,3 +8,6 @@ cpp:
 
 c:
 	gcc -O3 ttt.c -o ttt
+
+ocaml:
+	ocamlopt -O3 ttt.ml -o ttt
