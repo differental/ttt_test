@@ -6,14 +6,15 @@
 #include <vector>
 #include <chrono>
 
-class Board {
-    static constexpr size_t BOARD_SIZE = 20;
-    static constexpr size_t BOARD_SIZE_SQUARED = BOARD_SIZE * BOARD_SIZE;
-    static constexpr size_t WIN_CONDITION = 10;
+const size_t BOARD_SIZE = 20;
+const size_t BOARD_SIZE_SQUARED = BOARD_SIZE * BOARD_SIZE;
+const size_t WIN_CONDITION = 10;
 
+class Board
+{
     using BoardArray = std::array<std::array<bool, BOARD_SIZE>, BOARD_SIZE>;
-    using CountArray = std::array<int, BOARD_SIZE>;
-    using DiagArray = std::array<int, 2 * BOARD_SIZE - 1>;
+    using CountArray = std::array<long long, BOARD_SIZE>;
+    using DiagArray = std::array<long long, 2 * BOARD_SIZE - 1>;
 
     BoardArray board{};
     CountArray cols{};
@@ -24,7 +25,8 @@ class Board {
 public:
     Board() = default;
 
-    void update(size_t x, size_t y) {
+    void update(size_t x, size_t y)
+    {
         board[y][x] = true;
         cols[x]++;
         rows[y]++;
@@ -32,12 +34,14 @@ public:
         anti[x + y]++;
     }
 
-    bool check_win(size_t x, size_t y) const {
-        int acc;
+    bool check_win(size_t x, size_t y) const
+    {
+        long long acc;
         size_t xa, ya;
 
         // Column
-        if (cols[x] >= WIN_CONDITION) {
+        if (cols[x] >= WIN_CONDITION)
+        {
             acc = 1;
             ya = y + 1;
             while (ya < BOARD_SIZE && board[ya++][x])
@@ -50,7 +54,8 @@ public:
         }
 
         // Row
-        if (rows[y] >= WIN_CONDITION) {
+        if (rows[y] >= WIN_CONDITION)
+        {
             acc = 1;
             xa = x + 1;
             while (xa < BOARD_SIZE && board[y][xa++])
@@ -63,7 +68,8 @@ public:
         }
 
         // Diagonal
-        if (diag[x - y + BOARD_SIZE - 1] >= WIN_CONDITION) {
+        if (diag[x - y + BOARD_SIZE - 1] >= WIN_CONDITION)
+        {
             acc = 1;
             xa = x + 1;
             ya = y + 1;
@@ -78,7 +84,8 @@ public:
         }
 
         // Anti-diagonal
-        if (anti[x + y] >= WIN_CONDITION) {
+        if (anti[x + y] >= WIN_CONDITION)
+        {
             acc = 1;
             xa = x + 1;
             ya = y - 1;
@@ -96,33 +103,42 @@ public:
     }
 };
 
-class Game {
-    static constexpr size_t BOARD_SIZE = 20;
-    static constexpr size_t BOARD_SIZE_SQUARED = BOARD_SIZE * BOARD_SIZE;
+class Game
+{
 
     std::mt19937 rng_{1729};
 
 public:
-    enum class Result { Circle, Cross, Draw };
+    enum class Result
+    {
+        Circle,
+        Cross,
+        Draw
+    };
 
     Game() = default;
 
-    Result play() {
+    Result play()
+    {
         std::vector<size_t> free_cells(BOARD_SIZE_SQUARED);
         std::iota(free_cells.begin(), free_cells.end(), 0);
         std::shuffle(free_cells.begin(), free_cells.end(), rng_);
 
         Board circle, cross;
 
-        for (size_t i = 0; i < BOARD_SIZE_SQUARED; ++i) {
+        for (size_t i = 0; i < BOARD_SIZE_SQUARED; ++i)
+        {
             size_t x = free_cells[i] % BOARD_SIZE;
             size_t y = free_cells[i] / BOARD_SIZE;
 
-            if (i % 2 == 0) {
+            if (i % 2 == 0)
+            {
                 circle.update(x, y);
                 if (circle.check_win(x, y))
                     return Result::Circle;
-            } else {
+            }
+            else
+            {
                 cross.update(x, y);
                 if (cross.check_win(x, y))
                     return Result::Cross;
@@ -133,18 +149,27 @@ public:
     }
 };
 
-int main() {
+int main()
+{
     Game game;
     constexpr size_t n = 10000;
     size_t o = 0, x = 0, draw = 0;
 
     auto start = std::chrono::high_resolution_clock::now();
 
-    for (size_t i = 0; i < n; ++i) {
-        switch (game.play()) {
-            case Game::Result::Circle: o++; break;
-            case Game::Result::Cross: x++; break;
-            case Game::Result::Draw: draw++; break;
+    for (size_t i = 0; i < n; ++i)
+    {
+        switch (game.play())
+        {
+        case Game::Result::Circle:
+            o++;
+            break;
+        case Game::Result::Cross:
+            x++;
+            break;
+        case Game::Result::Draw:
+            draw++;
+            break;
         }
     }
 
