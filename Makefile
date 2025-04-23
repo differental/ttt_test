@@ -11,3 +11,9 @@ c:
 
 ocaml:
 	ocamlopt -O3 ttt.ml -o ttt
+	rm -f ttt.cmi
+	rm -f ttt.cmx
+	rm -f ttt.o
+
+clean:
+	rm -f ttt
