@@ -4,10 +4,13 @@ rust:
 	cargo build --profile release-prod
 
 cpp:
-	g++ -O3 ttt.cc -o ttt
+	g++ -Wall -Wextra -O3 ttt.cc -o ttt
+
+go:
+	go build -ldflags="-s -w" -o ttt ttt.go
 
 c:
-	gcc -O3 ttt.c -o ttt
+	gcc -Wall -Wextra -O3 ttt.c -o ttt
 
 ocaml:
 	ocamlopt -O3 ttt.ml -o ttt
