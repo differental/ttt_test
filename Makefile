@@ -1,27 +1,54 @@
 CFLAGS := -O3 -Wall -Wextra
 
+all: rust cpp c go ocaml java lean
+
+bench:
+	@echo "Rust"
+	@./ttt.rs.exe
+	@echo "C++"
+	@./ttt.cc.exe
+	@echo "C"
+	@./ttt.c.exe
+	@echo "Go"
+	@./ttt.go.exe
+	@echo "OCaml"
+	@./ttt.ml.exe
+	@echo "JavaScript"
+	@node ttt.js
+	@echo "Java"
+	@java ttt
+	@echo "Pypy"
+	@pypy3 ttt.py
+	@echo "Lean"
+	@./ttt.lean.exe
+	@echo "Python"
+	@python3 ttt.py
+
+clean:
+	rm -f *.exe
+	rm -f *.o
+	rm -f *.class
+	rm -f *.cmi
+	rm -f *.cmx
+
 rust:
-	rustc ttt.rs -o ttt -C opt-level=3 -C target-cpu=native -C lto
+	rustc -o ttt.rs.exe ttt.rs -C opt-level=3 -C target-cpu=native -C lto
 
 cpp:
-	g++ -o ttt ttt.cc $(CFLAGS)
+	g++ -o ttt.cc.exe ttt.cc $(CFLAGS)
 
 go:
-	go build -o ttt -ldflags="-s -w" ttt.go
+	go build -o ttt.go.exe -ldflags="-s -w" ttt.go
 
 c:
-	gcc ttt.c -o ttt $(CFLAGS)
+	gcc -o ttt.c.exe ttt.c $(CFLAGS)
 
 ocaml:
-	ocamlopt -o ttt ttt.ml -O3
-	rm -f ttt.cmi
-	rm -f ttt.cmx
-	rm -f ttt.o
+	ocamlopt -o ttt.ml.exe ttt.ml -O3
 
 java:
 	javac ttt.java -Xlint -g:none
 	java ttt
-	rm -f *.class
 
 js:
 	node ttt.js
@@ -29,7 +56,7 @@ js:
 lean: LEAN := $(shell lean --print-prefix)
 lean:
 	lean ttt.lean -c ttt.lean.c
-	$(LEAN)/bin/clang -o ttt ttt.lean.c $(CFLAGS) --sysroot=$(LEAN) \
+	$(LEAN)/bin/clang -o ttt.lean.exe ttt.lean.c $(CFLAGS) --sysroot=$(LEAN) \
 	-I $(LEAN)/include -fPIC -fvisibility=hidden -isystem $(LEAN)/include/clang -DNDEBUG \
 	-L $(LEAN)/lib/glibc -lc_nonshared -lpthread_nonshared \
 	-L $(LEAN)/lib -Wl,-Bstatic -lgmp -lunwind -luv \
@@ -41,6 +68,3 @@ python:
 
 pypy:
 	pypy3 ttt.py
-
-clean:
-	rm -f ttt

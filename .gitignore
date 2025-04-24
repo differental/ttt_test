@@ -1,2 +1,14 @@
 ttt
+*.exe
+
+# Java
 *.class
+
+# C
+*.o
+
+# OCaml
+*.cmi
+*.cmx
+*.cmo
+*.cmx
