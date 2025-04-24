@@ -21,7 +21,7 @@ ocaml:
 java:
 	javac -Xlint -g:none ttt.java
 	java ttt
-	rm -f ttt.class
+	rm -f *.class
 
 python:
 	python3 ttt.py
