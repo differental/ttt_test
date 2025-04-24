@@ -177,8 +177,8 @@ fn do_game(rng: &mut XorShift) -> Option<Player> {
     shuffle(rng, &mut free_cells);
 
     for (i, &index) in free_cells.iter().enumerate() {
-        let x = index % BOARD_SIZE;
         let y = index / BOARD_SIZE;
+        let x = index - BOARD_SIZE * y;
 
         let player = if i % 2 == 0 {
             Player::Circle

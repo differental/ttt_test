@@ -1,5 +1,5 @@
 rust:
-	rustc -O ttt.rs -o ttt
+	rustc ttt.rs -o ttt -C opt-level=3 -C target-cpu=native -C lto
 
 cpp:
 	g++ -Wall -Wextra -O3 ttt.cc -o ttt
