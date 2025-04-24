@@ -92,10 +92,11 @@ bool check_win(Board *b, int x, int y)
 unsigned int rand()
 {
     // Xorshift
-    static unsigned int x = 3952629967;
+    static unsigned long x = 1729163UL;
     x ^= x << 13;
     x ^= x >> 17;
     x ^= x << 5;
+    x &= 0xffffffffU;
     return x;
 }
 
