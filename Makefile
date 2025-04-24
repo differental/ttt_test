@@ -1,7 +1,5 @@
-all: rust cpp c
-
 rust:
-	cargo build --profile release-prod
+	rustc -O ttt.rs -o ttt
 
 cpp:
 	g++ -Wall -Wextra -O3 ttt.cc -o ttt

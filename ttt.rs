@@ -1,5 +1,3 @@
-use rand::{SeedableRng, seq::SliceRandom};
-
 const BOARD_SIZE: usize = 20;
 const BOARD_SIZE_SQUARED: usize = BOARD_SIZE * BOARD_SIZE;
 const NUM_DIAGONALS: usize = 2 * BOARD_SIZE - 1;
@@ -136,17 +134,47 @@ impl Board {
     }
 }
 
+struct XorShift {
+    x: u64,
+}
+
+impl XorShift {
+    fn new(seed: u64) -> Self {
+        Self { x: seed }
+    }
+
+    fn next(&mut self) -> u32 {
+        self.x ^= self.x << 13;
+        self.x ^= self.x >> 17;
+        self.x ^= self.x << 5;
+        self.x &= 0xffffffff;
+        self.x as u32
+    }
+
+    fn next_range(&mut self, max: usize) -> usize {
+        (self.next() as usize) % max
+    }
+}
+
+fn shuffle<T>(rng: &mut XorShift, slice: &mut [T]) {
+    // Fisher-Yates
+    for i in (1..slice.len()).rev() {
+        let j = rng.next_range(i + 1);
+        slice.swap(i, j);
+    }
+}
+
 enum Player {
     Circle,
     Cross,
 }
 
-fn do_game(rng: &mut rand::rngs::SmallRng) -> Option<Player> {
+fn do_game(rng: &mut XorShift) -> Option<Player> {
     let mut circle = Board::new();
     let mut cross = Board::new();
     let mut free_cells: Vec<usize> = (0..BOARD_SIZE_SQUARED).collect();
 
-    free_cells.shuffle(rng);
+    shuffle(rng, &mut free_cells);
 
     for (i, &index) in free_cells.iter().enumerate() {
         let x = index % BOARD_SIZE;
@@ -173,7 +201,7 @@ fn do_game(rng: &mut rand::rngs::SmallRng) -> Option<Player> {
 }
 
 fn main() {
-    let mut rng = rand::rngs::SmallRng::seed_from_u64(1729);
+    let mut rng = XorShift::new(1729);
 
     let n = 10000;
     let mut o = 0;
