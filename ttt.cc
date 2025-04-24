@@ -104,8 +104,8 @@ Result do_game(std::mt19937 &rng)
 
     for (int i = 0; i < BOARD_SIZE_SQUARED; ++i)
     {
-        int x = free_cells[i] % BOARD_SIZE;
         int y = free_cells[i] / BOARD_SIZE;
+        int x = free_cells[i] - BOARD_SIZE * y;
 
         if (i % 2 == 0)
         {

@@ -1,7 +1,7 @@
 CFLAGS := -O3 -Wall -Wextra
 
 rust:
-	rustc -o ttt ttt.rs -O
+	rustc ttt.rs -o ttt -C opt-level=3 -C target-cpu=native -C lto
 
 cpp:
 	g++ -o ttt ttt.cc $(CFLAGS)

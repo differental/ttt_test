@@ -98,8 +98,8 @@ public class ttt {
         Board cross = new Board();
 
         for (int i = 0; i < BOARD_SIZE_SQUARED; i++) {
-            int x = freeCells.get(i) % BOARD_SIZE;
             int y = freeCells.get(i) / BOARD_SIZE;
+            int x = freeCells.get(i) - BOARD_SIZE * y;
 
             if (i % 2 == 0) {
                 circle.update(x, y);
