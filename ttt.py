@@ -34,15 +34,13 @@ class Board:
             ya = y + 1
             while ya < BOARD_SIZE and self.board[ya][x]:
                 acc += 1
-                if acc == WIN_CONDITION:
-                    return True
                 ya += 1
             ya = y - 1
             while 0 <= ya and self.board[ya][x]:
                 acc += 1
-                if acc == WIN_CONDITION:
-                    return True
                 ya -= 1
+            if acc >= WIN_CONDITION:
+                return True
 
         # Row
         if self.rows[y] >= WIN_CONDITION:
@@ -50,15 +48,13 @@ class Board:
             xa = x + 1
             while xa < BOARD_SIZE and self.board[y][xa]:
                 acc += 1
-                if acc == WIN_CONDITION:
-                    return True
                 xa += 1
             xa = x - 1
             while 0 <= xa and self.board[y][xa]:
                 acc += 1
-                if acc == WIN_CONDITION:
-                    return True
                 xa -= 1
+            if acc >= WIN_CONDITION:
+                return True
 
         # Diagonal
         if self.diag[x - y + BOARD_SIZE - 1] >= WIN_CONDITION:
@@ -67,18 +63,16 @@ class Board:
             ya = y + 1
             while xa < BOARD_SIZE and ya < BOARD_SIZE and self.board[ya][xa]:
                 acc += 1
-                if acc == WIN_CONDITION:
-                    return True
                 xa += 1
                 ya += 1
             xa = x - 1
             ya = y - 1
             while 0 <= xa and 0 <= ya and self.board[ya][xa]:
                 acc += 1
-                if acc == WIN_CONDITION:
-                    return True
                 xa -= 1
                 ya -= 1
+            if acc >= WIN_CONDITION:
+                return True
 
         # Anti-diagonal
         if self.anti[x + y] >= WIN_CONDITION:
@@ -87,18 +81,16 @@ class Board:
             ya = y - 1
             while xa < BOARD_SIZE and 0 <= ya and self.board[ya][xa]:
                 acc += 1
-                if acc == WIN_CONDITION:
-                    return True
                 xa += 1
                 ya -= 1
             xa = x - 1
             ya = y + 1
             while 0 <= xa and ya < BOARD_SIZE and self.board[ya][xa]:
                 acc += 1
-                if acc == WIN_CONDITION:
-                    return True
                 xa -= 1
                 ya += 1
+            if acc >= WIN_CONDITION:
+                return True
 
         return False
 

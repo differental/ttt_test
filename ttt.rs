@@ -41,18 +41,15 @@ impl Board {
             ya = y + 1;
             while ya < BOARD_SIZE as isize && self.board[ya as usize][x as usize] {
                 acc += 1;
-                if acc >= WIN_CONDITION {
-                    return true;
-                }
                 ya += 1;
             }
             ya = y - 1;
             while 0 <= ya && self.board[ya as usize][x as usize] {
                 acc += 1;
-                if acc >= WIN_CONDITION {
-                    return true;
-                }
                 ya -= 1;
+            }
+            if acc >= WIN_CONDITION {
+                return true;
             }
         }
 
@@ -62,18 +59,15 @@ impl Board {
             xa = x + 1;
             while xa < BOARD_SIZE as isize && self.board[y as usize][xa as usize] {
                 acc += 1;
-                if acc >= WIN_CONDITION {
-                    return true;
-                }
                 xa += 1;
             }
             xa = x - 1;
             while 0 <= xa && self.board[y as usize][xa as usize] {
                 acc += 1;
-                if acc >= WIN_CONDITION {
-                    return true;
-                }
                 xa -= 1;
+            }
+            if acc >= WIN_CONDITION {
+                return true;
             }
         }
 
@@ -87,9 +81,6 @@ impl Board {
                 && self.board[ya as usize][xa as usize]
             {
                 acc += 1;
-                if acc >= WIN_CONDITION {
-                    return true;
-                }
                 xa += 1;
                 ya += 1;
             }
@@ -97,11 +88,11 @@ impl Board {
             ya = y - 1;
             while 0 <= xa && 0 <= ya && self.board[ya as usize][xa as usize] {
                 acc += 1;
-                if acc >= WIN_CONDITION {
-                    return true;
-                }
                 xa -= 1;
                 ya -= 1;
+            }
+            if acc >= WIN_CONDITION {
+                return true;
             }
         }
 
@@ -112,9 +103,6 @@ impl Board {
             ya = y - 1;
             while xa < BOARD_SIZE as isize && 0 <= ya && self.board[ya as usize][xa as usize] {
                 acc += 1;
-                if acc >= WIN_CONDITION {
-                    return true;
-                }
                 xa += 1;
                 ya -= 1;
             }
@@ -122,11 +110,11 @@ impl Board {
             ya = y + 1;
             while 0 <= xa && ya < BOARD_SIZE as isize && self.board[ya as usize][xa as usize] {
                 acc += 1;
-                if acc >= WIN_CONDITION {
-                    return true;
-                }
                 xa -= 1;
                 ya += 1;
+            }
+            if acc >= WIN_CONDITION {
+                return true;
             }
         }
 

@@ -45,18 +45,15 @@ func (b *Board) checkWin(x, y int) bool {
 		ya = y + 1
 		for ya < boardSize && b.board[ya][x] {
 			acc++
-			if acc == winCondition {
-				return true
-			}
 			ya++
 		}
 		ya = y - 1
 		for 0 <= ya && b.board[ya][x] {
 			acc++
-			if acc == winCondition {
-				return true
-			}
 			ya--
+		}
+		if acc >= winCondition {
+			return true
 		}
 	}
 
@@ -66,18 +63,15 @@ func (b *Board) checkWin(x, y int) bool {
 		xa = x + 1
 		for xa < boardSize && b.board[y][xa] {
 			acc++
-			if acc == winCondition {
-				return true
-			}
 			xa++
 		}
 		xa = x - 1
 		for 0 <= xa && b.board[y][xa] {
 			acc++
-			if acc == winCondition {
-				return true
-			}
 			xa--
+		}
+		if acc >= winCondition {
+			return true
 		}
 	}
 
@@ -88,9 +82,6 @@ func (b *Board) checkWin(x, y int) bool {
 		ya = y + 1
 		for xa < boardSize && ya < boardSize && b.board[ya][xa] {
 			acc++
-			if acc == winCondition {
-				return true
-			}
 			xa++
 			ya++
 		}
@@ -98,11 +89,11 @@ func (b *Board) checkWin(x, y int) bool {
 		ya = y - 1
 		for 0 <= xa && 0 <= ya && b.board[ya][xa] {
 			acc++
-			if acc == winCondition {
-				return true
-			}
 			xa--
 			ya--
+		}
+		if acc >= winCondition {
+			return true
 		}
 	}
 
@@ -113,9 +104,6 @@ func (b *Board) checkWin(x, y int) bool {
 		ya = y - 1
 		for xa < boardSize && ya >= 0 && b.board[ya][xa] {
 			acc++
-			if acc == winCondition {
-				return true
-			}
 			xa++
 			ya--
 		}
@@ -123,11 +111,11 @@ func (b *Board) checkWin(x, y int) bool {
 		ya = y + 1
 		for xa >= 0 && ya < boardSize && b.board[ya][xa] {
 			acc++
-			if acc == winCondition {
-				return true
-			}
 			xa--
 			ya++
+		}
+		if acc >= winCondition {
+			return true
 		}
 	}
 
@@ -218,7 +206,7 @@ func main() {
 		if i == 0 {
 			games += r
 		}
-		r := rand.New(rand.NewSource(int64(1729 + i)))
+		r := rand.New(rand.NewSource(int64(1729163 + i)))
 		go worker(i, games, r, &wg, results)
 	}
 

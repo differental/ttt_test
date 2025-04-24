@@ -42,48 +42,48 @@ bool check_win(Board *b, int x, int y)
     if (b->cols[x] >= WIN_CONDITION)
     {
         int acc = 1;
-        for (int ya = y; ++ya < BOARD_SIZE && b->board[ya][x];)
-            if (++acc >= WIN_CONDITION)
-                return true;
-        for (int ya = y; 0 <= --ya && b->board[ya][x];)
-            if (++acc >= WIN_CONDITION)
-                return true;
+        for (int ya = y; ++ya < BOARD_SIZE && b->board[ya][x]; acc++)
+            ;
+        for (int ya = y; 0 <= --ya && b->board[ya][x]; acc++)
+            ;
+        if (acc >= WIN_CONDITION)
+            return true;
     }
 
     // Row
     if (b->rows[y] >= WIN_CONDITION)
     {
         int acc = 1;
-        for (int xa = x; ++xa < BOARD_SIZE && b->board[y][xa];)
-            if (++acc >= WIN_CONDITION)
-                return true;
-        for (int xa = x; 0 <= --xa && b->board[y][xa];)
-            if (++acc >= WIN_CONDITION)
-                return true;
+        for (int xa = x; ++xa < BOARD_SIZE && b->board[y][xa]; acc++)
+            ;
+        for (int xa = x; 0 <= --xa && b->board[y][xa]; acc++)
+            ;
+        if (acc >= WIN_CONDITION)
+            return true;
     }
 
     // Diagonal
     if (b->diag[x - y + BOARD_SIZE - 1] >= WIN_CONDITION)
     {
         int acc = 1;
-        for (int xa = x, ya = y; ++xa < BOARD_SIZE && ++ya < BOARD_SIZE && b->board[ya][xa];)
-            if (++acc >= WIN_CONDITION)
-                return true;
-        for (int xa = x, ya = y; 0 <= --xa && 0 <= --ya && b->board[ya][xa];)
-            if (++acc >= WIN_CONDITION)
-                return true;
+        for (int xa = x, ya = y; ++xa < BOARD_SIZE && ++ya < BOARD_SIZE && b->board[ya][xa]; acc++)
+            ;
+        for (int xa = x, ya = y; 0 <= --xa && 0 <= --ya && b->board[ya][xa]; acc++)
+            ;
+        if (acc >= WIN_CONDITION)
+            return true;
     }
 
     // Anti-diagonal
     if (b->anti[x + y] >= WIN_CONDITION)
     {
         int acc = 1;
-        for (int xa = x, ya = y; ++xa < BOARD_SIZE && 0 <= --ya && b->board[ya][xa];)
-            if (++acc >= WIN_CONDITION)
-                return true;
-        for (int xa = x, ya = y; 0 <= --xa && ++ya < BOARD_SIZE && b->board[ya][xa];)
-            if (++acc >= WIN_CONDITION)
-                return true;
+        for (int xa = x, ya = y; ++xa < BOARD_SIZE && 0 <= --ya && b->board[ya][xa]; acc++)
+            ;
+        for (int xa = x, ya = y; 0 <= --xa && ++ya < BOARD_SIZE && b->board[ya][xa]; acc++)
+            ;
+        if (acc >= WIN_CONDITION)
+            return true;
     }
 
     return false;
@@ -149,6 +149,9 @@ int main()
 {
     int n = 10000;
     int o = 0, x = 0, draw = 0;
+
+    printf("Rand: %u\n", rand());
+    printf("Rand: %u\n", rand());
 
     clock_t start = clock();
 

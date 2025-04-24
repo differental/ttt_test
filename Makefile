@@ -1,25 +1,40 @@
+CFLAGS := -O3 -Wall -Wextra
+
 rust:
-	rustc -O ttt.rs -o ttt
+	rustc -o ttt ttt.rs -O
 
 cpp:
-	g++ -Wall -Wextra -O3 ttt.cc -o ttt
+	g++ -o ttt ttt.cc $(CFLAGS)
 
 go:
-	go build -ldflags="-s -w" -o ttt ttt.go
+	go build -o ttt -ldflags="-s -w" ttt.go
 
 c:
-	gcc -Wall -Wextra -O3 ttt.c -o ttt
+	gcc ttt.c -o ttt $(CFLAGS)
 
 ocaml:
-	ocamlopt -O3 ttt.ml -o ttt
+	ocamlopt -o ttt ttt.ml -O3
 	rm -f ttt.cmi
 	rm -f ttt.cmx
 	rm -f ttt.o
 
 java:
-	javac -Xlint -g:none ttt.java
+	javac ttt.java -Xlint -g:none
 	java ttt
 	rm -f *.class
+
+js:
+	node ttt.js
+
+lean: LEAN := $(shell lean --print-prefix)
+lean:
+	lean ttt.lean -c ttt.lean.c
+	$(LEAN)/bin/clang -o ttt ttt.lean.c $(CFLAGS) --sysroot=$(LEAN) \
+	-I $(LEAN)/include -fPIC -fvisibility=hidden -isystem $(LEAN)/include/clang -DNDEBUG \
+	-L $(LEAN)/lib/glibc -lc_nonshared -lpthread_nonshared \
+	-L $(LEAN)/lib -Wl,-Bstatic -lgmp -lunwind -luv \
+	-fuse-ld=lld -L $(LEAN)/lib/lean -lleancpp -lLean -lStd -lInit -lleanrt -lc++ -lc++abi -Wl,-Bdynamic -lm
+	rm -f ttt.lean.c
 
 python:
 	python3 ttt.py

@@ -39,48 +39,48 @@ public:
         if (cols[x] >= WIN_CONDITION)
         {
             int acc = 1;
-            for (int ya = y; ++ya < BOARD_SIZE && board[ya][x];)
-                if (++acc >= WIN_CONDITION)
-                    return true;
-            for (int ya = y; 0 <= --ya && board[ya][x];)
-                if (++acc >= WIN_CONDITION)
-                    return true;
+            for (int ya = y; ++ya < BOARD_SIZE && board[ya][x]; acc++)
+                ;
+            for (int ya = y; 0 <= --ya && board[ya][x]; acc++)
+                ;
+            if (acc >= WIN_CONDITION)
+                return true;
         }
 
         // Row
         if (rows[y] >= WIN_CONDITION)
         {
             int acc = 1;
-            for (int xa = x; ++xa < BOARD_SIZE && board[y][xa];)
-                if (++acc >= WIN_CONDITION)
-                    return true;
-            for (int xa = x; 0 <= --xa && board[y][xa];)
-                if (++acc >= WIN_CONDITION)
-                    return true;
+            for (int xa = x; ++xa < BOARD_SIZE && board[y][xa]; acc++)
+                ;
+            for (int xa = x; 0 <= --xa && board[y][xa]; acc++)
+                ;
+            if (acc >= WIN_CONDITION)
+                return true;
         }
 
         // Diagonal
         if (diag[x - y + BOARD_SIZE - 1] >= WIN_CONDITION)
         {
             int acc = 1;
-            for (int xa = x, ya = y; ++xa < BOARD_SIZE && ++ya < BOARD_SIZE && board[ya][xa];)
-                if (++acc >= WIN_CONDITION)
-                    return true;
-            for (int xa = x, ya = y; 0 <= --xa && 0 <= --ya && board[ya][xa];)
-                if (++acc >= WIN_CONDITION)
-                    return true;
+            for (int xa = x, ya = y; ++xa < BOARD_SIZE && ++ya < BOARD_SIZE && board[ya][xa]; acc++)
+                ;
+            for (int xa = x, ya = y; 0 <= --xa && 0 <= --ya && board[ya][xa]; acc++)
+                ;
+            if (acc >= WIN_CONDITION)
+                return true;
         }
 
         // Anti-diagonal
         if (anti[x + y] >= WIN_CONDITION)
         {
             int acc = 1;
-            for (int xa = x, ya = y; ++xa < BOARD_SIZE && 0 <= --ya && board[ya][xa];)
-                if (++acc >= WIN_CONDITION)
-                    return true;
-            for (int xa = x, ya = y; 0 <= --xa && ++ya < BOARD_SIZE && board[ya][xa];)
-                if (++acc >= WIN_CONDITION)
-                    return true;
+            for (int xa = x, ya = y; ++xa < BOARD_SIZE && 0 <= --ya && board[ya][xa]; acc++)
+                ;
+            for (int xa = x, ya = y; 0 <= --xa && ++ya < BOARD_SIZE && board[ya][xa]; acc++)
+                ;
+            if (acc >= WIN_CONDITION)
+                return true;
         }
 
         return false;

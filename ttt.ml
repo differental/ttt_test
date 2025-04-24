@@ -39,15 +39,14 @@ let check_win b x y : unit =
     ya := y + 1;
     while !ya < board_size && b.board.(!ya).(x) do
       incr acc;
-      if !acc >= win_condition then raise Exit;
       incr ya
     done;
     ya := y - 1;
     while 0 <= !ya && b.board.(!ya).(x) do
       incr acc;
-      if !acc >= win_condition then raise Exit;
       decr ya
-    done);
+    done;
+    if !acc >= win_condition then raise Exit);
 
   (* Row *)
   if b.rows.(y) >= win_condition then (
@@ -55,15 +54,14 @@ let check_win b x y : unit =
     xa := x + 1;
     while !xa < board_size && b.board.(y).(!xa) do
       incr acc;
-      if !acc >= win_condition then raise Exit;
       incr xa
     done;
     xa := x - 1;
     while 0 <= !xa && b.board.(y).(!xa) do
       incr acc;
-      if !acc >= win_condition then raise Exit;
       decr xa
-    done);
+    done;
+    if !acc >= win_condition then raise Exit);
 
   (* Diagonal *)
   if b.diags.(x - y + board_size - 1) >= win_condition then (
@@ -72,7 +70,6 @@ let check_win b x y : unit =
     ya := y + 1;
     while !xa < board_size && !ya < board_size && b.board.(!ya).(!xa) do
       incr acc;
-      if !acc >= win_condition then raise Exit;
       incr xa;
       incr ya
     done;
@@ -80,10 +77,10 @@ let check_win b x y : unit =
     ya := y - 1;
     while 0 <= !xa && 0 <= !ya && b.board.(!ya).(!xa) do
       incr acc;
-      if !acc >= win_condition then raise Exit;
       decr xa;
       decr ya
-    done);
+    done;
+    if !acc >= win_condition then raise Exit);
 
   (* Anti-diagonal *)
   if b.anti_diags.(x + y) >= win_condition then (
@@ -92,7 +89,6 @@ let check_win b x y : unit =
     ya := y - 1;
     while !xa < board_size && 0 <= !ya && b.board.(!ya).(!xa) do
       incr acc;
-      if !acc >= win_condition then raise Exit;
       incr xa;
       decr ya
     done;
@@ -100,10 +96,10 @@ let check_win b x y : unit =
     ya := y + 1;
     while 0 <= !xa && !ya < board_size && b.board.(!ya).(!xa) do
       incr acc;
-      if !acc >= win_condition then raise Exit;
       decr xa;
       incr ya
-    done)
+    done;
+    if !acc >= win_condition then raise Exit)
 
 let seed : int ref = ref 1729163
 
