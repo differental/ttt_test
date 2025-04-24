@@ -30,6 +30,9 @@ clean:
 	rm -f *.class
 	rm -f *.cmi
 	rm -f *.cmx
+	rm -f *.lean.c
+	rm -f *.olean
+	rm -f *.ilean
 
 rust:
 	rustc -o ttt.rs.exe ttt.rs -C opt-level=3 -C target-cpu=native -C lto
@@ -48,10 +51,6 @@ ocaml:
 
 java:
 	javac ttt.java -Xlint -g:none
-	java ttt
-
-js:
-	node ttt.js
 
 lean: LEAN := $(shell lean --print-prefix)
 lean:
@@ -61,10 +60,3 @@ lean:
 	-L $(LEAN)/lib/glibc -lc_nonshared -lpthread_nonshared \
 	-L $(LEAN)/lib -Wl,-Bstatic -lgmp -lunwind -luv \
 	-fuse-ld=lld -L $(LEAN)/lib/lean -lleancpp -lLean -lStd -lInit -lleanrt -lc++ -lc++abi -Wl,-Bdynamic -lm
-	rm -f ttt.lean.c
-
-python:
-	python3 ttt.py
-
-pypy:
-	pypy3 ttt.py
