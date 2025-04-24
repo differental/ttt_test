@@ -10,7 +10,7 @@ bench:
 	@echo "C"
 	@./ttt.c.exe
 	@echo "Go"
-	@./ttt.go.exe
+	@CPUS=1 ./ttt.go.exe
 	@echo "OCaml"
 	@./ttt.ml.exe
 	@echo "JavaScript"
