@@ -24,7 +24,7 @@ class Board
 public:
     Board() = default;
 
-    void update(size_t x, size_t y)
+    void update(int x, int y)
     {
         board[y][x] = true;
         cols[x]++;
@@ -33,7 +33,7 @@ public:
         anti[x + y]++;
     }
 
-    bool check_win(size_t x, size_t y) const
+    bool check_win(int x, int y) const
     {
         // Column
         if (cols[x] >= WIN_CONDITION)
@@ -96,16 +96,16 @@ enum class Result
 
 Result do_game(std::mt19937 &rng)
 {
-    std::vector<size_t> free_cells(BOARD_SIZE_SQUARED);
+    std::vector<int> free_cells(BOARD_SIZE_SQUARED);
     std::iota(free_cells.begin(), free_cells.end(), 0);
     std::shuffle(free_cells.begin(), free_cells.end(), rng);
 
     Board circle, cross;
 
-    for (size_t i = 0; i < BOARD_SIZE_SQUARED; ++i)
+    for (int i = 0; i < BOARD_SIZE_SQUARED; ++i)
     {
-        size_t x = free_cells[i] % BOARD_SIZE;
-        size_t y = free_cells[i] / BOARD_SIZE;
+        int x = free_cells[i] % BOARD_SIZE;
+        int y = free_cells[i] / BOARD_SIZE;
 
         if (i % 2 == 0)
         {
@@ -132,7 +132,7 @@ int main()
 
     auto start = std::chrono::high_resolution_clock::now();
 
-    for (size_t i = 0; i < n; ++i)
+    for (int i = 0; i < n; i++)
     {
         switch (do_game(rng))
         {
