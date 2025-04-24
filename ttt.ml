@@ -105,11 +105,20 @@ let check_win b x y : unit =
       incr ya
     done)
 
+let seed : int ref = ref 1729163
+
+let rand () : int =
+  seed := !seed lxor (!seed lsl 13);
+  seed := !seed lxor (!seed lsr 17);
+  seed := !seed lxor (!seed lsl 5);
+  seed := !seed land 0xffffffff;
+  !seed
+
 let shuffle a =
   (* Fisher-Yates *)
   let n = Array.length a in
   for i = n - 1 downto 1 do
-    let k = Random.int (i + 1) in
+    let k = rand () mod (i + 1) in
     let x = a.(k) in
     a.(k) <- a.(i);
     a.(i) <- x
@@ -138,7 +147,6 @@ let do_game () : player option =
   with Win player -> Some player
 
 let () =
-  Random.init 1729;
   let n = 10000 in
   let o, x, draw = (ref 0, ref 0, ref 0) in
   let start = Sys.time () in
