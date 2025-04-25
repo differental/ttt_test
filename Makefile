@@ -46,6 +46,9 @@ go:
 c:
 	gcc -o ttt.c.exe ttt.c $(CFLAGS)
 
+c-alt:
+	gcc -o ttt-alt.c.exe ttt-alt.c $(CFLAGS)
+
 ocaml:
 	ocamlopt -o ttt.ml.exe ttt.ml -O3
 

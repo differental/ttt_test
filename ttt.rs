@@ -1,7 +1,7 @@
-const BOARD_SIZE: usize = 20;
+const BOARD_SIZE: usize = 40;
 const BOARD_SIZE_SQUARED: usize = BOARD_SIZE * BOARD_SIZE;
 const NUM_DIAGONALS: usize = 2 * BOARD_SIZE - 1;
-const WIN_CONDITION: usize = 10;
+const WIN_CONDITION: usize = 12;
 
 struct Board {
     board: [[bool; BOARD_SIZE]; BOARD_SIZE],

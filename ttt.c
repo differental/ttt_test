@@ -4,9 +4,9 @@
 #include <stdbool.h>
 #include <time.h>
 
-#define BOARD_SIZE 20
+#define BOARD_SIZE 40
 #define BOARD_SIZE_SQUARED (BOARD_SIZE * BOARD_SIZE)
-#define WIN_CONDITION 10
+#define WIN_CONDITION 12
 
 typedef struct
 {
@@ -149,9 +149,6 @@ int main()
 {
     int n = 10000;
     int o = 0, x = 0, draw = 0;
-
-    printf("Rand: %u\n", rand());
-    printf("Rand: %u\n", rand());
 
     clock_t start = clock();
 
