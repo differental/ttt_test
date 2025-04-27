@@ -40,36 +40,34 @@ impl Board {
     fn check_win(&mut self, x: usize, y: usize) -> bool {
         let q = &raw const self.cells[y][x];
 
-        unsafe {
-            let q = &*q;
+        let q = unsafe { &*q };
 
-            let col = q.s + 1 + q.n;
-            let row = q.w + 1 + q.e;
-            let diag = q.nw + 1 + q.se;
-            let anti = q.ne + 1 + q.sw;
+        let col = q.s + 1 + q.n;
+        let row = q.w + 1 + q.e;
+        let diag = q.nw + 1 + q.se;
+        let anti = q.ne + 1 + q.sw;
 
-            if col >= WIN_CONDITION
-                || row >= WIN_CONDITION
-                || diag >= WIN_CONDITION
-                || anti >= WIN_CONDITION
-            {
-                return true;
-            }
-
-            self.cells[y + q.s + 1][x].n = col;
-            self.cells[y - q.n - 1][x].s = col;
-
-            self.cells[y][x + q.e + 1].w = row;
-            self.cells[y][x - q.w - 1].e = row;
-
-            self.cells[y + q.se + 1][x + q.se + 1].nw = diag;
-            self.cells[y - q.nw - 1][x - q.nw - 1].se = diag;
-
-            self.cells[y - q.ne - 1][x + q.ne + 1].sw = anti;
-            self.cells[y + q.sw + 1][x - q.sw - 1].ne = anti;
-
-            false
+        if col >= WIN_CONDITION
+            || row >= WIN_CONDITION
+            || diag >= WIN_CONDITION
+            || anti >= WIN_CONDITION
+        {
+            return true;
         }
+
+        self.cells[y + q.s + 1][x].n = col;
+        self.cells[y - q.n - 1][x].s = col;
+
+        self.cells[y][x + q.e + 1].w = row;
+        self.cells[y][x - q.w - 1].e = row;
+
+        self.cells[y + q.se + 1][x + q.se + 1].nw = diag;
+        self.cells[y - q.nw - 1][x - q.nw - 1].se = diag;
+
+        self.cells[y - q.ne - 1][x + q.ne + 1].sw = anti;
+        self.cells[y + q.sw + 1][x - q.sw - 1].ne = anti;
+
+        false
     }
 }
 
