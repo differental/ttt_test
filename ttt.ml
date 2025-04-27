@@ -1,124 +1,65 @@
 let board_size = 20
+let board_size_padded = board_size + 2
 let board_size_squared = board_size * board_size
-let num_diagonals = (2 * board_size) - 1
 let win_condition = 10
 
-type board = {
-  board : bool array array;
-  cols : int array;
-  rows : int array;
-  diags : int array;
-  anti_diags : int array;
+type cell = {
+  mutable s : int;
+  mutable n : int;
+  mutable e : int;
+  mutable w : int;
+  mutable se : int;
+  mutable nw : int;
+  mutable ne : int;
+  mutable sw : int;
 }
 
+type board = cell array array
+
+let make_cell () =
+  { s = 1; n = 1; e = 1; w = 1; se = 1; nw = 1; ne = 1; sw = 1 }
+
 let make_board () : board =
-  {
-    board = Array.make_matrix board_size board_size false;
-    cols = Array.make board_size 0;
-    rows = Array.make board_size 0;
-    diags = Array.make num_diagonals 0;
-    anti_diags = Array.make num_diagonals 0;
-  }
+  let b =
+    Array.make_matrix board_size_padded board_size_padded (make_cell ())
+  in
+  for y = 1 to board_size do
+    for x = 1 to board_size do
+      b.(y).(x) <- make_cell ()
+    done
+  done;
+  b
 
-let update_board board x y =
-  board.board.(y).(x) <- true;
-  board.cols.(x) <- board.cols.(x) + 1;
-  board.rows.(y) <- board.rows.(y) + 1;
-  board.diags.(x - y + board_size - 1) <-
-    board.diags.(x - y + board_size - 1) + 1;
-  board.anti_diags.(x + y) <- board.anti_diags.(x + y) + 1
+let check_win b x y : bool =
+  let q = b.(y).(x) in
+  let col = q.s + q.n in
+  let row = q.w + q.e in
+  let diag = q.nw + q.se in
+  let anti = q.ne + q.sw in
 
-let check_win b x y : unit =
-  let acc = ref 0 in
-  let xa = ref x in
-  let ya = ref y in
-
-  (* Column *)
-  if b.cols.(x) >= win_condition then (
-    acc := 1;
-    ya := y + 1;
-    while !ya < board_size && b.board.(!ya).(x) do
-      incr acc;
-      incr ya
-    done;
-    ya := y - 1;
-    while 0 <= !ya && b.board.(!ya).(x) do
-      incr acc;
-      decr ya
-    done;
-    if !acc >= win_condition then raise Exit);
-
-  (* Row *)
-  if b.rows.(y) >= win_condition then (
-    acc := 1;
-    xa := x + 1;
-    while !xa < board_size && b.board.(y).(!xa) do
-      incr acc;
-      incr xa
-    done;
-    xa := x - 1;
-    while 0 <= !xa && b.board.(y).(!xa) do
-      incr acc;
-      decr xa
-    done;
-    if !acc >= win_condition then raise Exit);
-
-  (* Diagonal *)
-  if b.diags.(x - y + board_size - 1) >= win_condition then (
-    acc := 1;
-    xa := x + 1;
-    ya := y + 1;
-    while !xa < board_size && !ya < board_size && b.board.(!ya).(!xa) do
-      incr acc;
-      incr xa;
-      incr ya
-    done;
-    xa := x - 1;
-    ya := y - 1;
-    while 0 <= !xa && 0 <= !ya && b.board.(!ya).(!xa) do
-      incr acc;
-      decr xa;
-      decr ya
-    done;
-    if !acc >= win_condition then raise Exit);
-
-  (* Anti-diagonal *)
-  if b.anti_diags.(x + y) >= win_condition then (
-    acc := 1;
-    xa := x + 1;
-    ya := y - 1;
-    while !xa < board_size && 0 <= !ya && b.board.(!ya).(!xa) do
-      incr acc;
-      incr xa;
-      decr ya
-    done;
-    xa := x - 1;
-    ya := y + 1;
-    while 0 <= !xa && !ya < board_size && b.board.(!ya).(!xa) do
-      incr acc;
-      decr xa;
-      incr ya
-    done;
-    if !acc >= win_condition then raise Exit)
+  if
+    col > win_condition || row > win_condition || diag > win_condition
+    || anti > win_condition
+  then true
+  else (
+    b.(y + q.s).(x).n <- col;
+    b.(y - q.n).(x).s <- col;
+    b.(y).(x + q.e).w <- row;
+    b.(y).(x - q.w).e <- row;
+    b.(y + q.se).(x + q.se).nw <- diag;
+    b.(y - q.nw).(x - q.nw).se <- diag;
+    b.(y - q.ne).(x + q.ne).sw <- anti;
+    b.(y + q.sw).(x - q.sw).ne <- anti;
+    false)
 
 let seed : int ref = ref 1729163
 
-let rand () : int =
+let rand max : int =
   seed := !seed lxor (!seed lsl 13);
   seed := !seed lxor (!seed lsr 17);
   seed := !seed lxor (!seed lsl 5);
   seed := !seed land 0xffffffff;
-  !seed
-
-let shuffle a =
-  (* Fisher-Yates *)
-  let n = Array.length a in
-  for i = n - 1 downto 1 do
-    let k = rand () mod (i + 1) in
-    let x = a.(k) in
-    a.(k) <- a.(i);
-    a.(i) <- x
-  done
+  (!seed * max) lsr 32
 
 type player = Circle | Cross
 
@@ -127,20 +68,30 @@ exception Win of player
 let do_game () : player option =
   let circle = make_board () in
   let cross = make_board () in
-  let free = Array.init board_size_squared Fun.id in
-  shuffle free;
+  let free_x = Array.make board_size_squared 0 in
+  let free_y = Array.make board_size_squared 0 in
+  let i = ref 0 in
+  for y = 1 to board_size do
+    for x = 1 to board_size do
+      let j = rand (!i + 1) in
+      free_x.(!i) <- free_x.(j);
+      free_y.(!i) <- free_y.(j);
+      free_x.(j) <- x;
+      free_y.(j) <- y;
+      incr i
+    done
+  done;
 
   try
     for i = 0 to board_size_squared - 1 do
-      let x = free.(i) / board_size in
-      let y = free.(i) mod board_size in
-      let player = if i mod 2 = 0 then Circle else Cross in
-      let board = match player with Circle -> circle | Cross -> cross in
-      update_board board x y;
-      try check_win board x y with Exit -> raise (Win player)
+      let x = free_x.(i) in
+      let y = free_y.(i) in
+      if i land 1 = 0 then (
+        if check_win circle x y then raise_notrace (Win Circle))
+      else if check_win cross x y then raise_notrace (Win Cross)
     done;
     None
-  with Win player -> Some player
+  with Win p -> Some p
 
 let () =
   let n = 10000 in

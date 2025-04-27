@@ -1,3 +1,4 @@
+CC := gcc
 CFLAGS := -O3 -Wall -Wextra
 
 all: rust cpp c go ocaml java lean
@@ -46,9 +47,6 @@ go:
 c:
 	gcc -o ttt.c.exe ttt.c $(CFLAGS)
 
-c-alt:
-	gcc -o ttt-alt.c.exe ttt-alt.c $(CFLAGS)
-
 ocaml:
 	ocamlopt -o ttt.ml.exe ttt.ml -O3
 
@@ -58,7 +56,7 @@ java:
 lean: LEAN := $(shell lean --print-prefix)
 lean:
 	lean ttt.lean -c ttt.lean.c
-	$(LEAN)/bin/clang -o ttt.lean.exe ttt.lean.c $(CFLAGS) --sysroot=$(LEAN) \
+	$(LEAN)/bin/clang -o ttt.lean.exe ttt.lean.c -O3 --sysroot=$(LEAN) \
 	-I $(LEAN)/include -fPIC -fvisibility=hidden -isystem $(LEAN)/include/clang -DNDEBUG \
 	-L $(LEAN)/lib/glibc -lc_nonshared -lpthread_nonshared \
 	-L $(LEAN)/lib -Wl,-Bstatic -lgmp -lunwind -luv \

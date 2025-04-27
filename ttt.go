@@ -12,139 +12,75 @@ import (
 
 const (
 	boardSize        = 20
+	boardPadded      = boardSize + 2
 	boardSizeSquared = boardSize * boardSize
 	numDiagonals     = 2*boardSize - 1
 	winCondition     = 10
 )
 
-type Board struct {
-	board [boardSize][boardSize]bool
-	cols  [boardSize]int
-	rows  [boardSize]int
-	diag  [numDiagonals]int
-	anti  [numDiagonals]int
+type Cell struct {
+	s, n, e, w, se, nw, ne, sw int
 }
+
+type Board [boardPadded][boardPadded]Cell
 
 func NewBoard() *Board {
 	return &Board{}
 }
 
-func (b *Board) update(x, y int) {
-	b.board[y][x] = true
-	b.cols[x]++
-	b.rows[y]++
-	b.diag[x-y+boardSize-1]++
-	b.anti[x+y]++
-}
-
 func (b *Board) checkWin(x, y int) bool {
-	var acc, xa, ya int
-	// Column
-	if b.cols[x] >= winCondition {
-		acc = 1
-		ya = y + 1
-		for ya < boardSize && b.board[ya][x] {
-			acc++
-			ya++
-		}
-		ya = y - 1
-		for 0 <= ya && b.board[ya][x] {
-			acc++
-			ya--
-		}
-		if acc >= winCondition {
-			return true
-		}
+	q := b[y][x]
+	col := q.s + 1 + q.n
+	row := q.w + 1 + q.e
+	diag := q.nw + 1 + q.se
+	anti := q.ne + 1 + q.sw
+
+	if col >= winCondition || row >= winCondition || diag >= winCondition || anti >= winCondition {
+		return true
 	}
 
-	// Row
-	if b.rows[y] >= winCondition {
-		acc = 1
-		xa = x + 1
-		for xa < boardSize && b.board[y][xa] {
-			acc++
-			xa++
-		}
-		xa = x - 1
-		for 0 <= xa && b.board[y][xa] {
-			acc++
-			xa--
-		}
-		if acc >= winCondition {
-			return true
-		}
-	}
-
-	// Diagonal
-	if b.diag[x-y+boardSize-1] >= winCondition {
-		acc = 1
-		xa = x + 1
-		ya = y + 1
-		for xa < boardSize && ya < boardSize && b.board[ya][xa] {
-			acc++
-			xa++
-			ya++
-		}
-		xa = x - 1
-		ya = y - 1
-		for 0 <= xa && 0 <= ya && b.board[ya][xa] {
-			acc++
-			xa--
-			ya--
-		}
-		if acc >= winCondition {
-			return true
-		}
-	}
-
-	// Anti-diagonal
-	if b.anti[x+y] >= winCondition {
-		acc = 1
-		xa = x + 1
-		ya = y - 1
-		for xa < boardSize && ya >= 0 && b.board[ya][xa] {
-			acc++
-			xa++
-			ya--
-		}
-		xa = x - 1
-		ya = y + 1
-		for xa >= 0 && ya < boardSize && b.board[ya][xa] {
-			acc++
-			xa--
-			ya++
-		}
-		if acc >= winCondition {
-			return true
-		}
-	}
+	b[y+q.s+1][x].n = col
+	b[y-q.n-1][x].s = col
+	b[y][x+q.e+1].w = row
+	b[y][x-q.w-1].e = row
+	b[y+q.se+1][x+q.se+1].nw = diag
+	b[y-q.nw-1][x-q.nw-1].se = diag
+	b[y-q.ne-1][x+q.ne+1].sw = anti
+	b[y+q.sw+1][x-q.sw-1].ne = anti
 
 	return false
 }
 
+var x = 1729163
+
+func xorshift(max int) int32 {
+	x ^= x << 13
+	x ^= x >> 17
+	x ^= x << 5
+	x &= 0xffffffff
+	return int32((x * max) >> 32)
+}
+
 func doGame(r *rand.Rand) int {
 	freeCells := make([]int, boardSizeSquared)
-	for i := range freeCells {
-		freeCells[i] = i
+	for i := range boardSizeSquared {
+		j := xorshift(i + 1)
+		freeCells[i] = freeCells[j]
+		freeCells[j] = i
 	}
-	r.Shuffle(len(freeCells), func(i, j int) {
-		freeCells[i], freeCells[j] = freeCells[j], freeCells[i]
-	})
 
 	circle := NewBoard()
 	cross := NewBoard()
 
 	for i := 0; i < boardSizeSquared; i++ {
-		x := freeCells[i] % boardSize
-		y := freeCells[i] / boardSize
+		x := freeCells[i]%boardSize + 1
+		y := freeCells[i]/boardSize + 1
 
 		if i%2 == 0 {
-			circle.update(x, y)
 			if circle.checkWin(x, y) {
 				return 0
 			}
 		} else {
-			cross.update(x, y)
 			if cross.checkWin(x, y) {
 				return 1
 			}

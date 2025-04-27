@@ -4,92 +4,82 @@
 #include <stdbool.h>
 #include <time.h>
 
-#define BOARD_SIZE 40
+#define BOARD_SIZE 20
+#define BOARD_PADDED (BOARD_SIZE + 2)
 #define BOARD_SIZE_SQUARED (BOARD_SIZE * BOARD_SIZE)
-#define WIN_CONDITION 12
+#define WIN_CONDITION 10
+typedef unsigned char u8;
+
+// ================================================================
+// Compass directions: East is +x, South is +y
+//
+//   N
+// W   E
+//   S
+//
+// Board representation (row major)
+// Point (x, y) lies at arr[y + 1][x + 1]
+// Have padding of 1 cell on all sides to avoid bounds checking.
+//
+// \ 0 1 2 3 4 x
+// 0 . . . . .
+// 1 . . . . .
+// 2 . . . . .
+// 3 . . . . .
+// 4 . . . . .
+// y
+//
+// Strategy:
+// Each cell describes the number of filled squares in all eight directions.
+//
+// E.g.
+//
+// <- W . . # # . # # # . . -> E
+//        p     q       r
+//
+// Cell p has p.e = 2
+// Cell q has q.w = 2, q.e = 3
+// Cell r has r.w = 3
+//
+// If q becomes filled:
+//   The row is joined and now has length k = q.w + 1 + q.e
+//   If k >= WIN_CONDITION,
+//     then q forms a winning line.
+//   Otherwise,
+//     Set p.e to k
+//     Set r.w to k
+//   There is no need to update q.w or q.e in the future, even if p or r are filled, since
+//   q.w and q.e will never be checked again.
+// ================================================================
 
 typedef struct
 {
-    bool board[BOARD_SIZE][BOARD_SIZE];
-    int cols[BOARD_SIZE];
-    int rows[BOARD_SIZE];
-    int diag[2 * BOARD_SIZE - 1];
-    int anti[2 * BOARD_SIZE - 1];
-} Board;
+    u8 s, n, e, w, se, nw, ne, sw;
+} Cell;
 
-void board_init(Board *b)
+typedef Cell Board[BOARD_PADDED][BOARD_PADDED];
+
+bool check_win(Board b, u8 x, u8 y)
 {
-    *b = (Board){
-        .board = {{false}},
-        .cols = {0},
-        .rows = {0},
-        .diag = {0},
-        .anti = {0}};
-}
+    Cell q = b[y][x];
 
-void board_update(Board *b, int x, int y)
-{
-    b->board[y][x] = true;
-    b->cols[x]++;
-    b->rows[y]++;
-    b->diag[x - y + BOARD_SIZE - 1]++;
-    b->anti[x + y]++;
-}
+    u8 col = q.s + 1 + q.n;
+    u8 row = q.w + 1 + q.e;
+    u8 diag = q.nw + 1 + q.se;
+    u8 anti = q.ne + 1 + q.sw;
 
-bool check_win(Board *b, int x, int y)
-{
-    // Column
-    if (b->cols[x] >= WIN_CONDITION)
-    {
-        int acc = 1;
-        for (int ya = y; ++ya < BOARD_SIZE && b->board[ya][x]; acc++)
-            ;
-        for (int ya = y; 0 <= --ya && b->board[ya][x]; acc++)
-            ;
-        if (acc >= WIN_CONDITION)
-            return true;
-    }
+    if (col >= WIN_CONDITION || row >= WIN_CONDITION || diag >= WIN_CONDITION || anti >= WIN_CONDITION)
+        return true;
 
-    // Row
-    if (b->rows[y] >= WIN_CONDITION)
-    {
-        int acc = 1;
-        for (int xa = x; ++xa < BOARD_SIZE && b->board[y][xa]; acc++)
-            ;
-        for (int xa = x; 0 <= --xa && b->board[y][xa]; acc++)
-            ;
-        if (acc >= WIN_CONDITION)
-            return true;
-    }
-
-    // Diagonal
-    if (b->diag[x - y + BOARD_SIZE - 1] >= WIN_CONDITION)
-    {
-        int acc = 1;
-        for (int xa = x, ya = y; ++xa < BOARD_SIZE && ++ya < BOARD_SIZE && b->board[ya][xa]; acc++)
-            ;
-        for (int xa = x, ya = y; 0 <= --xa && 0 <= --ya && b->board[ya][xa]; acc++)
-            ;
-        if (acc >= WIN_CONDITION)
-            return true;
-    }
-
-    // Anti-diagonal
-    if (b->anti[x + y] >= WIN_CONDITION)
-    {
-        int acc = 1;
-        for (int xa = x, ya = y; ++xa < BOARD_SIZE && 0 <= --ya && b->board[ya][xa]; acc++)
-            ;
-        for (int xa = x, ya = y; 0 <= --xa && ++ya < BOARD_SIZE && b->board[ya][xa]; acc++)
-            ;
-        if (acc >= WIN_CONDITION)
-            return true;
-    }
+    b[y + q.s + 1][x].n = b[y - q.n - 1][x].s = col;
+    b[y][x + q.e + 1].w = b[y][x - q.w - 1].e = row;
+    b[y + q.se + 1][x + q.se + 1].nw = b[y - q.nw - 1][x - q.nw - 1].se = diag;
+    b[y - q.ne - 1][x + q.ne + 1].sw = b[y + q.sw + 1][x - q.sw - 1].ne = anti;
 
     return false;
 }
 
-unsigned int rand()
+unsigned int xorshift(unsigned int max)
 {
     // Xorshift
     static unsigned long x = 1729163UL;
@@ -97,48 +87,38 @@ unsigned int rand()
     x ^= x >> 17;
     x ^= x << 5;
     x &= 0xffffffffU;
-    return x;
-}
-
-void shuffle(int *a, int n)
-{
-    // Fisher-Yates shuffle
-    for (int i = n - 1; i > 0; i--)
-    {
-        int k = rand() % (i + 1);
-        int temp = a[k];
-        a[k] = a[i];
-        a[i] = temp;
-    }
+    return x * max >> 32;
 }
 
 int do_game()
 {
-    int free_cells[BOARD_SIZE_SQUARED];
-    for (int i = 0; i < BOARD_SIZE_SQUARED; i++)
-        free_cells[i] = i;
+    u8 free_x[BOARD_SIZE_SQUARED];
+    u8 free_y[BOARD_SIZE_SQUARED];
+    for (int y = 1, i = 0; y <= BOARD_SIZE; y++)
+        for (int x = 1; x <= BOARD_SIZE; x++, i++)
+        {
+            int j = xorshift(i + 1);
+            free_x[i] = free_x[j];
+            free_y[i] = free_y[j];
+            free_x[j] = x;
+            free_y[j] = y;
+        }
 
-    shuffle(free_cells, BOARD_SIZE_SQUARED);
-
-    Board circle, cross;
-    board_init(&circle);
-    board_init(&cross);
+    Board circle = {}, cross = {};
 
     for (int i = 0; i < BOARD_SIZE_SQUARED; i++)
     {
-        int x = free_cells[i] % BOARD_SIZE;
-        int y = free_cells[i] / BOARD_SIZE;
+        int x = free_x[i];
+        int y = free_y[i];
 
         if (i % 2 == 0)
         {
-            board_update(&circle, x, y);
-            if (check_win(&circle, x, y))
+            if (check_win(circle, x, y))
                 return 0;
         }
         else
         {
-            board_update(&cross, x, y);
-            if (check_win(&cross, x, y))
+            if (check_win(cross, x, y))
                 return 1;
         }
     }
@@ -155,18 +135,12 @@ int main()
     for (int i = 0; i < n; i++)
     {
         int res = do_game();
-        switch (res)
-        {
-        case 0:
+        if (res == 0)
             o++;
-            break;
-        case 1:
+        else if (res == 1)
             x++;
-            break;
-        case -1:
+        else
             draw++;
-            break;
-        }
     }
 
     clock_t end = clock();

@@ -96,16 +96,15 @@ class Board:
 
 
 def do_game() -> int:
-    free_cells: list[int] = [i for i in range(BOARD_SIZE_SQUARED)]
+    free_cells: list[tuple[int, int]] = [
+        (x, y) for y in range(BOARD_SIZE) for x in range(BOARD_SIZE)
+    ]
     random.shuffle(free_cells)
 
     circle = Board()
     cross = Board()
 
-    for i in range(BOARD_SIZE_SQUARED):
-        x = free_cells[i] % BOARD_SIZE
-        y = free_cells[i] // BOARD_SIZE
-
+    for i, (x, y) in enumerate(free_cells):
         if i % 2 == 0:
             circle.update(x, y)
             if circle.check_win(x, y):
