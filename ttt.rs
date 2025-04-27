@@ -3,7 +3,6 @@ const BOARD_PADDED: usize = BOARD_SIZE + 2;
 const BOARD_SIZE_SQUARED: usize = BOARD_SIZE * BOARD_SIZE;
 const WIN_CONDITION: usize = 10;
 
-#[derive(Clone)]
 struct Cell {
     n: usize,
     s: usize,
@@ -39,7 +38,6 @@ impl Board {
 
     fn check_win(&mut self, x: usize, y: usize) -> bool {
         let q = &raw const self.cells[y][x];
-
         let q = unsafe { &*q };
 
         let col = q.s + 1 + q.n;
