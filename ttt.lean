@@ -1,4 +1,5 @@
 def boardSize : Nat := 20
+def boardPadded : Nat := boardSize + 2
 def boardSizeSquared : Nat := boardSize * boardSize
 def winCondition : Nat := 10
 def numDiagonals : Nat := 2 * boardSize - 1
@@ -11,58 +12,37 @@ inductive Result
 | win : Player → Result
 | draw : Result
 
-structure Board where
-  board : Vector (Vector Bool boardSize) boardSize
-  cols : Vector Nat boardSize
-  rows : Vector Nat boardSize
-  diag : Vector Nat numDiagonals
-  anti : Vector Nat numDiagonals
+structure Cell where
+  n : Nat
+  s : Nat
+  e : Nat
+  w : Nat
+  ne : Nat
+  se : Nat
+  sw : Nat
+  nw : Nat
 deriving Inhabited
+
+abbrev Board := Vector (Vector Cell boardPadded) boardPadded
 
 namespace Board
 
-def update (x y : Nat) {h₁ : x < boardSize} {h₂ : y < boardSize} (b : Board) : Board :=
-  let diagIdx := x - y + boardSize - 1
-  let antiIdx := x + y
-  have : diagIdx < numDiagonals := by sorry
-  have : antiIdx < numDiagonals := by sorry
-  { board := b.board.set y (b.board[y].set x true),
-    cols := b.cols.set x (b.cols[x] + 1),
-    rows := b.rows.set y (b.rows[y] + 1),
-    diag := b.diag.set diagIdx (b.diag[diagIdx] + 1),
-    anti := b.anti.set antiIdx (b.anti[antiIdx] + 1)}
-
-partial def sumDir (x y dx dy : Int) (b : Board) : Nat :=
-  if 0 ≤ x && 0 ≤ y && x < boardSize && y < boardSize && b.board[y.toNat]![x.toNat]! then
-    1 + sumDir (x + dx) (y + dy) dx dy b
-  else
-    0
-
-def checkWin (x y : Nat) {h1 : x < boardSize} {h2 : y < boardSize} (b : Board) : Bool := Id.run do
-  -- Column
-  if winCondition ≤ b.cols[x] then
-    let acc := 1 + sumDir x (y + 1) 0 1 b + sumDir x (y - 1) 0 (-1) b
-    if winCondition ≤ acc then
-      return true
-
-  -- Row
-  if winCondition ≤ b.rows[y] then
-    let acc := 1 + sumDir (x + 1) y 1 0 b + sumDir (x - 1) y (-1) 0 b
-    if winCondition ≤ acc then
-      return true
-
-  -- Diagonal
-  if winCondition ≤ b.diag[x - y + boardSize - 1]! then
-    let acc := 1 + sumDir (x + 1) (y + 1) 1 1 b + sumDir (x - 1) (y - 1) (-1) (-1) b
-    if winCondition ≤ acc then
-      return true
-
-  -- Anti-diagonal
-  if winCondition ≤ b.anti[x + y]! then
-    let acc := 1 + sumDir (x + 1) (y - 1) 1 (-1) b + sumDir (x - 1) (y + 1) (-1) 1 b
-    if winCondition ≤ acc then
-      return true
-
+def checkWin (x y : Nat) (b : Board) : Bool := Id.run do
+  let q := b[y]![x]!
+  let col := q.s + 1 + q.n
+  let row := q.w + 1 + q.e
+  let diag := q.nw + 1 + q.se
+  let anti := q.ne + 1 + q.sw
+  if col >= winCondition || row >= winCondition || diag >= winCondition || anti >= winCondition then
+    return true
+  b.set (y + q.s + 1) (x) {n := col}
+  b.set (y - q.n - 1) (x) {s := col}
+  b.set (y) (x + q.e + 1) {w := row}
+  b.set (y) (x - q.w - 1) {e := row}
+  b.set (y + q.se + 1) (x + q.se + 1) {nw := diag}
+  b.set (y - q.nw - 1) (x - q.nw - 1) {se := diag}
+  b.set (y - q.ne - 1) (x + q.ne + 1) {sw := anti}
+  b.set (y + q.sw + 1) (x - q.sw - 1) {ne := anti}
   return false
 
 end Board
