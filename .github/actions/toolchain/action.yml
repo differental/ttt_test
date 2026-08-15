@@ -1,0 +1,121 @@
+name: Install toolchain
+description: >
+  Install the toolchain needed by one ttt_test implementation. Languages whose
+  compiler ships with the runner image (C, C++, Rust, CPython) are no-ops here.
+
+inputs:
+  language:
+    description: >
+      One of: c, cpp, cpp-mt, alt-c, rust, go, ocaml, js, java, pypy, lean,
+      python. Anything already on the runner image installs nothing.
+    required: true
+
+  # Versions are pinned to the ones in the README's reference-machine table so
+  # CI numbers stay comparable both to each other over time and to that table.
+  go-version:
+    description: Go toolchain version
+    default: "1.24.2"
+  node-version:
+    description: Node.js version
+    default: "23.9.0"
+  java-version:
+    description: Temurin JDK major version
+    default: "24"
+  cpython-version:
+    description: CPython version
+    default: "3.13"
+  pypy-version:
+    description: PyPy version, as an actions/setup-python spec
+    default: "pypy3.11"
+  ocaml-version:
+    description: opam compiler spec; flambda is required for ocamlopt -O3
+    default: "ocaml-variants.5.3.0+options,ocaml-option-flambda"
+  lean-version:
+    description: elan toolchain spec
+    default: "leanprover/lean4:v4.18.0"
+
+runs:
+  using: composite
+  steps:
+    - name: Go
+      if: inputs.language == 'go'
+      uses: actions/setup-go@v5
+      with:
+        go-version: ${{ inputs.go-version }}
+
+    - name: Node.js
+      if: inputs.language == 'js'
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ inputs.node-version }}
+
+    - name: JDK
+      if: inputs.language == 'java'
+      uses: actions/setup-java@v4
+      with:
+        distribution: temurin
+        java-version: ${{ inputs.java-version }}
+
+    # Pin CPython rather than relying on the image default, and record its
+    # absolute path: installing PyPy below would otherwise shadow `python3`.
+    - name: CPython
+      id: cpython
+      if: inputs.language == 'python'
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ inputs.cpython-version }}
+
+    - name: Record CPython path
+      if: inputs.language == 'python'
+      shell: bash
+      run: echo "CPYTHON=${{ steps.cpython.outputs.python-path }}" >> "$GITHUB_ENV"
+
+    - name: PyPy
+      id: pypy
+      if: inputs.language == 'pypy'
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ inputs.pypy-version }}
+
+    - name: Record PyPy path
+      if: inputs.language == 'pypy'
+      shell: bash
+      run: echo "PYPY=${{ steps.pypy.outputs.python-path }}" >> "$GITHUB_ENV"
+
+    # setup-ocaml caches the opam root, so only a cold run pays for building
+    # the flambda variant from source.
+    - name: OCaml
+      if: inputs.language == 'ocaml'
+      uses: ocaml/setup-ocaml@v3
+      with:
+        ocaml-compiler: ${{ inputs.ocaml-version }}
+
+    # setup-ocaml leaves the switch off PATH; the Makefile calls ocamlopt
+    # directly, so put it there.
+    - name: Put opam switch on PATH
+      if: inputs.language == 'ocaml'
+      shell: bash
+      run: opam var bin >> "$GITHUB_PATH"
+
+    - name: Cache elan
+      id: elan-cache
+      if: inputs.language == 'lean'
+      uses: actions/cache@v4
+      with:
+        path: ~/.elan
+        key: elan-${{ runner.os }}-${{ runner.arch }}-${{ inputs.lean-version }}
+
+    # lean-action assumes a Lake project; this repository has a bare ttt.lean
+    # and the Makefile drives `lean --print-prefix` and the bundled clang
+    # itself, so a plain elan install is what fits.
+    - name: Lean
+      if: inputs.language == 'lean' && steps.elan-cache.outputs.cache-hit != 'true'
+      shell: bash
+      run: |
+        curl -sSf https://elan.lean-lang.org/elan-init.sh \
+          | sh -s -- -y --default-toolchain "${{ inputs.lean-version }}"
+
+    - name: Put elan on PATH
+      if: inputs.language == 'lean'
+      shell: bash
+      run: echo "$HOME/.elan/bin" >> "$GITHUB_PATH"

@@ -12,3 +12,12 @@ ttt
 *.cmx
 *.cmo
 *.cmx
+
+# Lean
+*.lean.c
+*.olean
+*.ilean
+
+# CI
+results-*.json
+__pycache__/

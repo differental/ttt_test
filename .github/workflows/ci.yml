@@ -1,0 +1,124 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  # One job per implementation so a failure names the language directly.
+  check:
+    name: ${{ matrix.impl }} on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, ubuntu-24.04-arm]
+        impl:
+          - c
+          - cpp
+          - cpp-mt
+          - alt-c
+          - rust
+          - go
+          - ocaml
+          - js
+          - java
+          - pypy
+          - lean
+          - python
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/toolchain
+        with:
+          language: ${{ matrix.impl }}
+      - run: python3 ci/bench.py --check --only ${{ matrix.impl }}
+
+  # The per-implementation matrix above cannot see across languages, so this
+  # runs the whole suite in one place to exercise the cross-language invariant:
+  # every implementation seeded with 1729163 must produce identical counts.
+  invariants:
+    name: cross-language invariants on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, ubuntu-24.04-arm]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/toolchain
+        with: { language: go }
+      - uses: ./.github/actions/toolchain
+        with: { language: js }
+      - uses: ./.github/actions/toolchain
+        with: { language: java }
+      - uses: ./.github/actions/toolchain
+        with: { language: ocaml }
+      - uses: ./.github/actions/toolchain
+        with: { language: lean }
+      - uses: ./.github/actions/toolchain
+        with: { language: python }
+      - uses: ./.github/actions/toolchain
+        with: { language: pypy }
+      - run: python3 ci/bench.py --check
+
+  # The C and C++ entries are hand-optimised, so they get checked for the
+  # classes of bug that hand-optimisation introduces.
+  sanitizers:
+    name: sanitizers
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Address and undefined behaviour sanitizers
+        run: |
+          set -euo pipefail
+          san="-O1 -g -fsanitize=address,undefined -fno-sanitize-recover=undefined -fno-omit-frame-pointer"
+          gcc $san -o /tmp/ttt-c-san     ttt.c      && /tmp/ttt-c-san
+          gcc $san -o /tmp/ttt-alt-c-san ttt-alt.c  && /tmp/ttt-alt-c-san
+          g++ $san -o /tmp/ttt-cc-san    ttt.cc     && /tmp/ttt-cc-san
+
+      # ttt-mt.cc hands each worker its own boards and its own counter slot,
+      # and derives per-thread seeds by jumping the RNG ahead, so this should
+      # be clean. It is the check that would catch that changing.
+      - name: Thread sanitizer
+        run: |
+          set -euo pipefail
+          build() { g++ -O1 -g -fsanitize=thread -pthread -o /tmp/ttt-mt-tsan ttt-mt.cc; }
+          build || { sudo apt-get update && sudo apt-get install -y libtsan2 && build; }
+          /tmp/ttt-mt-tsan
+
+  # Guards the scripts CI itself depends on.
+  lint:
+    name: lint ci scripts
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 -m py_compile ci/bench.py ci/render_readme.py
+      - name: expected.json is well formed
+        run: |
+          python3 - <<'PY'
+          import json
+          with open("ci/expected.json") as handle:
+              data = json.load(handle)
+          missing = [n for n in data["identical_group"] if n not in data["impls"]]
+          assert not missing, f"identical_group names not in impls: {missing}"
+          for name, counts in data["impls"].items():
+              if counts is None:
+                  continue
+              assert len(counts) == 3, f"{name}: expected three counts"
+              assert sum(counts) == 10000, f"{name}: counts sum to {sum(counts)}"
+          print("ci/expected.json OK")
+          PY

@@ -1,0 +1,159 @@
+name: Benchmark
+
+# Deliberately not run on push: timings on shared CI runners are noisy enough
+# that re-measuring per commit would churn the README without telling anyone
+# anything. Weekly, or on demand.
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: Render the tables into the job summary without opening a PR
+        type: boolean
+        default: false
+      repeat:
+        description: Runs per implementation; the best one is reported
+        type: string
+        default: "5"
+      update_goldens:
+        description: >
+          Also upload a proposed ci/expected.json built from this run. For
+          bootstrapping a golden that cannot be produced locally - review the
+          diff before committing it.
+        type: boolean
+        default: false
+  schedule:
+    - cron: "0 4 * * 1"
+
+concurrency:
+  group: bench
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  measure:
+    name: measure on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        # The best machines GitHub offers for free: 4 vCPU / 16 GB. Larger
+        # runners are billed even on public repositories. Pinned to a specific
+        # image rather than ubuntu-latest, which would silently roll to a new
+        # release and break comparability with earlier results.
+        os: [ubuntu-24.04, ubuntu-24.04-arm]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ./.github/actions/toolchain
+        with: { language: go }
+      - uses: ./.github/actions/toolchain
+        with: { language: js }
+      - uses: ./.github/actions/toolchain
+        with: { language: java }
+      - uses: ./.github/actions/toolchain
+        with: { language: ocaml }
+      - uses: ./.github/actions/toolchain
+        with: { language: python }
+      # If a toolchain has no build for this architecture the row is reported
+      # as n/a rather than losing the whole measurement.
+      - uses: ./.github/actions/toolchain
+        continue-on-error: true
+        with: { language: pypy }
+      - uses: ./.github/actions/toolchain
+        continue-on-error: true
+        with: { language: lean }
+
+      - name: Benchmark
+        env:
+          RUNNER_LABEL: ${{ matrix.os }}
+        run: |
+          python3 ci/bench.py --bench \
+            --repeat "${{ inputs.repeat || '5' }}" \
+            --pin-cpu --skip-missing \
+            --out "results-${{ matrix.os }}.json"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bench-${{ matrix.os }}
+          path: results-${{ matrix.os }}.json
+
+      - name: Propose goldens
+        if: inputs.update_goldens
+        run: python3 ci/bench.py --check --update-goldens --skip-missing
+
+      - uses: actions/upload-artifact@v4
+        if: inputs.update_goldens
+        with:
+          name: proposed-goldens-${{ matrix.os }}
+          path: ci/expected.json
+
+  readme:
+    name: update README
+    needs: measure
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: bench-*
+          merge-multiple: true
+
+      - name: Render
+        run: |
+          set -euo pipefail
+          python3 ci/render_readme.py --results results-*.json
+
+      - name: Summarise
+        run: |
+          {
+            echo '## Benchmark results'
+            echo
+            echo '```diff'
+            git diff -- README.md || true
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Open or update pull request
+        if: ${{ !inputs.dry_run }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BRANCH: ci/bench-results
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- README.md; then
+            echo "README.md is already up to date; nothing to open."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add README.md
+          git commit -m "chore(ci): refresh benchmark results"
+
+          # The branch is regenerated from main on every run and exists only to
+          # carry this PR, so it is force-pushed. main is never written to.
+          git push --force origin "HEAD:refs/heads/$BRANCH"
+
+          if gh pr view "$BRANCH" --json number >/dev/null 2>&1; then
+            echo "Existing pull request updated."
+          else
+            gh pr create \
+              --base "${{ github.event.repository.default_branch }}" \
+              --head "$BRANCH" \
+              --title "chore(ci): refresh benchmark results" \
+              --body "Re-measured by \`.github/workflows/bench.yml\` on
+          \`ubuntu-24.04\` and \`ubuntu-24.04-arm\`, best of
+          ${{ inputs.repeat || '5' }} runs. Every result was checked against
+          \`ci/expected.json\`.
+
+          Shared runners are noisy; differences under roughly 20% are not
+          meaningful."
+          fi

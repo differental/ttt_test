@@ -1,0 +1,48 @@
+{
+  "_comment": [
+    "Golden O/X/Draw counts for 10000 games. Every implementation is",
+    "deterministic: fixed seed, fixed shuffle, 64-bit integer arithmetic only,",
+    "so these values are identical on x86_64 and aarch64.",
+    "",
+    "The counts differ between languages because the seeds differ. ttt.c,",
+    "ttt.cc, ttt-mt.cc, ttt.go, ttt.ml and ttt.lean all seed the shared",
+    "xorshift with 1729163 and must agree exactly - that is identical_group.",
+    "ttt.rs seeds 1729, ttt.js seeds 172916342314, and ttt.py / ttt.java use",
+    "their standard library generators, so each stands alone.",
+    "",
+    "ttt-alt.c is a different game entirely: 40x40 board, win condition 12.",
+    "",
+    "Regenerate with: python3 ci/bench.py --check --update-goldens"
+  ],
+  "identical_group": [
+    "c",
+    "cpp",
+    "cpp-mt",
+    "go",
+    "ocaml",
+    "lean"
+  ],
+  "impls": {
+    "alt-c": [3180, 3122, 3698],
+    "c": [2567, 2447, 4986],
+    "cpp": [2567, 2447, 4986],
+    "cpp-mt": [2567, 2447, 4986],
+    "go": [2567, 2447, 4986],
+    "java": null,
+    "js": [2522, 2414, 5064],
+    "lean": [2567, 2447, 4986],
+    "ocaml": [2567, 2447, 4986],
+    "pypy": [2475, 2439, 5086],
+    "python": [2475, 2439, 5086],
+    "rust": [2431, 2552, 5017]
+  },
+  "_unverified": {
+    "_comment": [
+      "Values that were predicted rather than measured, and are confirmed by",
+      "the first CI run. Remove a name from this list once CI has agreed.",
+      "java is null because it needs a JDK to produce; fill it with",
+      "--update-goldens from a CI run."
+    ],
+    "names": ["lean", "pypy", "java"]
+  }
+}
