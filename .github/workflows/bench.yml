@@ -62,9 +62,8 @@ jobs:
       - uses: ./.github/actions/toolchain
         continue-on-error: true
         with: { language: pypy }
-      - uses: ./.github/actions/toolchain
-        continue-on-error: true
-        with: { language: lean }
+      # No lean step: ttt.lean does not compile, so there is nothing to time.
+      # See the known_broken entry in ci/expected.json.
 
       - name: Benchmark
         env:
