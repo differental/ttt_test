@@ -2,7 +2,18 @@ CC := gcc
 CFLAGS := -O3 -Wall -Wextra
 CXXFLAGS := -O3 -march=native -funroll-loops -Wall -Wextra
 
+.PHONY: all all-variants bench check clean rust cpp cpp-mt go c alt ocaml java lean
+
 all: rust cpp c go ocaml java lean
+
+# Everything in `all`, plus the two entries that are not part of `bench`:
+# the multi-threaded C++ variant and the 40x40 alternative board.
+all-variants: all cpp-mt alt
+
+# Build and run every implementation, then check it produced the expected
+# result. This is what CI runs; see ci/expected.json.
+check:
+	python3 ci/bench.py --check
 
 bench:
 	@echo "Rust"
@@ -52,6 +63,12 @@ go:
 
 c:
 	gcc -o ttt.c.exe ttt.c $(CFLAGS)
+
+# Alternative implementation on a 40x40 board with a win condition of 12.
+# A different game from every other entry here, so it is not benchmarked
+# against them, but it is still built and checked.
+alt:
+	gcc -o ttt-alt.c.exe ttt-alt.c $(CFLAGS)
 
 ocaml:
 	ocamlopt -o ttt.ml.exe ttt.ml -O3
