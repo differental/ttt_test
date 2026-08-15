@@ -206,12 +206,19 @@ def check(impls: list[Impl], skip_missing: bool, update_goldens: bool) -> int:
     expected = load_expected()
     goldens = dict(expected["impls"])
     group = expected["identical_group"]
+    broken = expected.get("known_broken", {})
 
     observed: dict[str, tuple[int, int, int]] = {}
     failures: list[str] = []
     skipped: list[str] = []
+    skipped_broken: list[str] = []
 
     for impl in impls:
+        if impl.name in broken:
+            log(f"SKIP {impl.name}: known broken - {broken[impl.name]}")
+            skipped_broken.append(impl.name)
+            continue
+
         absent = missing_tools(impl)
         if absent:
             message = f"{impl.name}: missing {', '.join(absent)}"
@@ -268,6 +275,8 @@ def check(impls: list[Impl], skip_missing: bool, update_goldens: bool) -> int:
 
     if skipped:
         log(f"\nskipped (toolchain absent): {', '.join(skipped)}")
+    if skipped_broken:
+        log(f"skipped (known broken): {', '.join(skipped_broken)}")
     if failures:
         log("\n" + "\n".join(f"FAIL {failure}" for failure in failures))
         return 1
@@ -279,10 +288,15 @@ def bench(impls: list[Impl], repeat: int, skip_missing: bool, pin_cpu: bool,
           out_path: str | None) -> int:
     expected = load_expected()
     goldens = expected["impls"]
+    broken = expected.get("known_broken", {})
     results: dict[str, dict] = {}
     failures: list[str] = []
 
     for impl in impls:
+        if impl.name in broken:
+            log(f"SKIP {impl.name}: known broken - {broken[impl.name]}")
+            continue
+
         absent = missing_tools(impl)
         if absent:
             message = f"{impl.name}: missing {', '.join(absent)}"

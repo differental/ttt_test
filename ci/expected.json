@@ -5,10 +5,10 @@
     "so these values are identical on x86_64 and aarch64.",
     "",
     "The counts differ between languages because the seeds differ. ttt.c,",
-    "ttt.cc, ttt-mt.cc, ttt.go, ttt.ml and ttt.lean all seed the shared",
-    "xorshift with 1729163 and must agree exactly - that is identical_group.",
-    "ttt.rs seeds 1729, ttt.js seeds 172916342314, and ttt.py / ttt.java use",
-    "their standard library generators, so each stands alone.",
+    "ttt.cc, ttt-mt.cc, ttt.go and ttt.ml all seed the shared xorshift with",
+    "1729163 and must agree exactly - that is identical_group. ttt.rs seeds",
+    "1729, ttt.js seeds 172916342314, and ttt.py / ttt.java use their standard",
+    "library generators, so each stands alone.",
     "",
     "ttt-alt.c is a different game entirely: 40x40 board, win condition 12.",
     "",
@@ -19,8 +19,7 @@
     "cpp",
     "cpp-mt",
     "go",
-    "ocaml",
-    "lean"
+    "ocaml"
   ],
   "impls": {
     "alt-c": [3180, 3122, 3698],
@@ -28,21 +27,15 @@
     "cpp": [2567, 2447, 4986],
     "cpp-mt": [2567, 2447, 4986],
     "go": [2567, 2447, 4986],
-    "java": null,
+    "java": [2465, 2474, 5061],
     "js": [2522, 2414, 5064],
-    "lean": [2567, 2447, 4986],
+    "lean": null,
     "ocaml": [2567, 2447, 4986],
     "pypy": [2475, 2439, 5086],
     "python": [2475, 2439, 5086],
     "rust": [2431, 2552, 5017]
   },
-  "_unverified": {
-    "_comment": [
-      "Values that were predicted rather than measured, and are confirmed by",
-      "the first CI run. Remove a name from this list once CI has agreed.",
-      "java is null because it needs a JDK to produce; fill it with",
-      "--update-goldens from a CI run."
-    ],
-    "names": ["lean", "pypy", "java"]
+  "known_broken": {
+    "lean": "ttt.lean does not compile on any Lean 4 toolchain. Board.update is never defined; checkWin is declared (x y : Nat) (b : Board) but called with five arguments; shuffle discharges its bounds obligations with `by sorry`; and checkWin's b.set calls discard their results, so the writes would be no-ops even if it built. Delete this entry and add a golden once ttt.lean is a working program - it seeds the same xorshift with 1729163, so it belongs in identical_group."
   }
 }

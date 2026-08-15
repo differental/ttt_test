@@ -29,6 +29,9 @@ tuned against.
 | Lean 4.18.0 + Clang 19.1.7         | 1000                |
 | Python (CPython) 3.13.3            | 1880                |
 
+The Lean row is not currently reproducible: `ttt.lean` does not compile. See
+[Continuous Integration](#continuous-integration) below.
+
 ### GitHub Actions, x86_64
 
 Measured automatically by [`.github/workflows/bench.yml`](.github/workflows/bench.yml).
@@ -67,8 +70,22 @@ Two extra implementations are built by `make all-variants` but left out of
 `make check` builds and runs every implementation and verifies its output
 against the golden counts in [`ci/expected.json`](ci/expected.json). It asserts
 that each one plays exactly 10000 games, matches its recorded result, and that
-the six implementations sharing the same xorshift seed — C, C++, multi-threaded
-C++, Go, OCaml and Lean — agree with each other exactly.
+the five implementations sharing the same xorshift seed — C, C++, multi-threaded
+C++, Go and OCaml — agree with each other exactly.
 
 Run it locally with `python3 ci/bench.py --check --skip-missing`, which skips any
 language whose toolchain you do not have installed.
+
+### Known broken: Lean
+
+`ttt.lean` does not compile on any Lean 4 toolchain, so it is excluded from both
+the checks and the CI benchmark tables. `Board.update` is never defined,
+`checkWin` is declared `(x y : Nat) (b : Board)` but called with five arguments,
+and `shuffle` discharges its bounds obligations with `by sorry`. `checkWin`'s
+`b.set` calls also discard their results, so the writes would be no-ops even if
+it built.
+
+It seeds the same xorshift with `1729163` as C, C++, Go and OCaml, so a working
+version should produce `2567/2447/4986` and join `identical_group`. Once it does,
+delete its `known_broken` entry in [`ci/expected.json`](ci/expected.json) and add
+`lean` back to the CI matrix.
