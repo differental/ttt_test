@@ -1,5 +1,6 @@
 CC := gcc
 CFLAGS := -O3 -Wall -Wextra
+CXXFLAGS := -O3 -march=native -funroll-loops -Wall -Wextra
 
 all: rust cpp c go ocaml java lean
 
@@ -39,7 +40,12 @@ rust:
 	rustc -o ttt.rs.exe ttt.rs -C opt-level=3 -C target-cpu=native -C lto
 
 cpp:
-	g++ -o ttt.cc.exe ttt.cc $(CFLAGS)
+	g++ -o ttt.cc.exe ttt.cc $(CXXFLAGS)
+
+# Multi-threaded C++ variant. Same output, but not part of `bench`: every
+# other entry here runs single-threaded, so it is not a fair comparison.
+cpp-mt:
+	g++ -o ttt-mt.cc.exe ttt-mt.cc $(CXXFLAGS) -pthread
 
 go:
 	go build -o ttt.go.exe -ldflags="-s -w" ttt.go

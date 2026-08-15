@@ -24,11 +24,29 @@
  * For more information, please refer to <https://unlicense.org/>
  */
 
+// Multi-threaded companion to ttt.cc. Same simulation, same output; the
+// games are dealt out one worker per core.
+//
+// The games look strictly sequential because the xorshift state carries
+// from one into the next, but the step function is linear over GF(2):
+// every operation in it is a shift or an xor, and the 32-bit mask is a
+// projection. So one step is a 32x32 bit-matrix M, its 400th power J is
+// the state change across a whole game's draws, and applying J to a seed
+// skips a game without simulating it. Each game therefore gets an
+// independently computable starting state, and the three tallies are
+// sums, so the order they are accumulated in does not matter. The output
+// is bit-identical to the serial program.
+//
+// This is deliberately NOT part of `make bench`: every other language in
+// this repo runs single-threaded (the Go entry is pinned to CPUS=1), so
+// timing this alongside them would not be a like-for-like comparison.
 
 #include <chrono>
 #include <cstdint>
 #include <cstring>
 #include <iostream>
+#include <thread>
+#include <vector>
 
 constexpr int BOARD_SIZE = 20;
 constexpr int BOARD_PADDED = BOARD_SIZE + 2;
@@ -132,8 +150,6 @@ constexpr PosTable make_positions()
 
 constexpr PosTable POS = make_positions();
 
-static uint64_t rng_state = 1729163UL;
-static Board circle, cross;
 
 // How many shuffle steps and moves each pass of the fused loop handles.
 // Two is the sweet spot here: enough independent work to cover the xorshift
@@ -159,19 +175,76 @@ static_assert(CHUNK % 2 == 0 && BOARD_SIZE_SQUARED % CHUNK == 0,
         (m)++;                                                 \
     } while (0)
 
-// Plays the permutation in `pos` while building the *next* game's
-// permutation in `out`. The shuffle is a serial xorshift chain and on its
-// own runs latency-bound; interleaving it with the move loop, which is
-// throughput-bound and independent of it, hides almost all of it. The RNG
-// is still consumed in exactly the original order, one whole permutation
-// at a time, so the games are unchanged.
-Result play(const uint16_t *__restrict pos, uint16_t *__restrict out)
+// ---------------------------------------------------------------- jump-ahead
+
+constexpr uint32_t SEED = 1729163UL;
+
+static inline uint32_t rng_step(uint32_t x)
+{
+    uint64_t t = uint64_t(x) ^ (uint64_t(x) << 13);
+    uint32_t u = uint32_t(t) ^ uint32_t(t >> 17);
+    return u ^ (u << 5);
+}
+
+// r[i] is the image of basis vector e_i, so `apply` is a matrix-vector
+// product over GF(2) and `compose` composes the maps.
+struct Mat
+{
+    uint32_t r[32];
+};
+
+static uint32_t apply(const Mat &m, uint32_t x)
+{
+    uint32_t y = 0;
+    while (x)
+    {
+        y ^= m.r[__builtin_ctz(x)];
+        x &= x - 1;
+    }
+    return y;
+}
+
+static Mat compose(const Mat &a, const Mat &b)
+{
+    Mat c;
+    for (int i = 0; i < 32; i++)
+        c.r[i] = apply(b, a.r[i]);
+    return c;
+}
+
+// J = M^BOARD_SIZE_SQUARED, the state change across one game's draws.
+static Mat game_jump()
+{
+    Mat m;
+    for (int i = 0; i < 32; i++)
+        m.r[i] = rng_step(1u << i);
+
+    // Composed the plain way: 399 products of 32x32 bit-matrices, once, at
+    // startup. Square-and-multiply would save microseconds and is easy to
+    // get subtly wrong.
+    Mat j = m;
+    for (int i = 1; i < BOARD_SIZE_SQUARED; i++)
+        j = compose(j, m);
+    return j;
+}
+
+// ------------------------------------------------------------------ workers
+
+struct Counts
+{
+    long o, x, d;
+};
+
+// The same fused loop as ttt.cc: play `pos` while building the next game's
+// permutation into `out`, so the serial xorshift chain hides behind the
+// throughput-bound move loop.
+static Result play(Board &circle, Board &cross, const uint16_t *__restrict pos,
+                   uint16_t *__restrict out, uint64_t rng)
 {
     circle.clear();
     cross.clear();
 
     const uint16_t *__restrict pt = POS.v;
-    uint64_t rng = rng_state;
     int m = 1;
     Result r = Result::Draw;
 
@@ -195,52 +268,106 @@ Result play(const uint16_t *__restrict pos, uint16_t *__restrict out)
         }
     }
 done:
-    // A game that ended early still owes the rest of the permutation.
     while (m <= BOARD_SIZE_SQUARED)
         SHUFFLE_STEP(rng, m, out, pt);
 
-    rng_state = rng;
     return r;
+}
+
+static void worker(int lo, int hi, const uint32_t *seeds, Counts *out_counts)
+{
+    Counts c = {0, 0, 0};
+    if (lo >= hi)
+    {
+        *out_counts = c;
+        return;
+    }
+
+    Board circle, cross;
+    uint16_t perm[2][BOARD_SIZE_SQUARED];
+
+    // Prime this worker's pipeline with its first game's permutation.
+    {
+        uint64_t rng = seeds[lo];
+        int m = 1;
+        while (m <= BOARD_SIZE_SQUARED)
+            SHUFFLE_STEP(rng, m, perm[0], POS.v);
+    }
+
+    for (int g = lo; g < hi; g++)
+    {
+        int slot = (g - lo) & 1;
+        // The range's last game has no successor to shuffle for, so it
+        // refills the spare buffer with its own seed and that is discarded.
+        uint64_t next = (g + 1 < hi) ? seeds[g + 1] : seeds[lo];
+
+        switch (play(circle, cross, perm[slot], perm[slot ^ 1], next))
+        {
+        case Result::Circle:
+            c.o++;
+            break;
+        case Result::Cross:
+            c.x++;
+            break;
+        case Result::Draw:
+            c.d++;
+            break;
+        }
+    }
+
+    *out_counts = c;
 }
 
 int main()
 {
     constexpr int n = 10000;
-    int o = 0, x = 0, draw = 0;
-
-    static uint16_t perm[2][BOARD_SIZE_SQUARED];
 
     auto start = std::chrono::high_resolution_clock::now();
 
-    // Prime the pipeline with the first game's permutation.
+    // Per-game starting states: 32 xors each, noise next to the 400 real
+    // draws every game still performs.
+    std::vector<uint32_t> seeds(n);
     {
-        uint64_t rng = rng_state;
-        int m = 1;
-        while (m <= BOARD_SIZE_SQUARED)
-            SHUFFLE_STEP(rng, m, perm[0], POS.v);
-        rng_state = rng;
+        Mat j = game_jump();
+        uint32_t s = SEED;
+        for (int i = 0; i < n; i++)
+        {
+            seeds[i] = s;
+            s = apply(j, s);
+        }
     }
 
-    for (int i = 0; i < n; i++)
+    unsigned t = std::thread::hardware_concurrency();
+    if (t == 0)
+        t = 1;
+    if (t > unsigned(n))
+        t = unsigned(n);
+
+    std::vector<Counts> parts(t);
+    std::vector<std::thread> pool;
+    pool.reserve(t);
+    for (unsigned i = 0; i < t; i++)
     {
-        switch (play(perm[i & 1], perm[~i & 1]))
-        {
-        case Result::Circle:
-            o++;
-            break;
-        case Result::Cross:
-            x++;
-            break;
-        case Result::Draw:
-            draw++;
-            break;
-        }
+        int lo = int((long long)n * i / t);
+        int hi = int((long long)n * (i + 1) / t);
+        pool.emplace_back(worker, lo, hi, seeds.data(), &parts[i]);
+    }
+    for (std::thread &th : pool)
+        th.join();
+
+    long o = 0, x = 0, draw = 0;
+    for (const Counts &c : parts)
+    {
+        o += c.o;
+        x += c.x;
+        draw += c.d;
     }
 
     auto end = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
 
     std::cout << "O/X/Draw: " << o << "/" << x << "/" << draw << std::endl;
-    std::cout << "Time taken: " << duration.count() << " ms" << std::endl;
+    std::cout << "Time taken: " << duration.count() << " ms"
+              << " (" << t << " threads)" << std::endl;
     return 0;
 }
