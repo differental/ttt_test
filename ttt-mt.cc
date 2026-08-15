@@ -251,7 +251,9 @@ static Result play(Board &circle, Board &cross, const uint16_t *__restrict pos,
     for (int k = 0; k < BOARD_SIZE_SQUARED; k += CHUNK)
     {
         for (int c = 0; c < CHUNK; c++)
+        {
             SHUFFLE_STEP(rng, m, out, pt);
+        }
 
         for (int c = 0; c < CHUNK; c += 2)
         {
@@ -269,7 +271,9 @@ static Result play(Board &circle, Board &cross, const uint16_t *__restrict pos,
     }
 done:
     while (m <= BOARD_SIZE_SQUARED)
+    {
         SHUFFLE_STEP(rng, m, out, pt);
+    }
 
     return r;
 }
@@ -291,7 +295,9 @@ static void worker(int lo, int hi, const uint32_t *seeds, Counts *out_counts)
         uint64_t rng = seeds[lo];
         int m = 1;
         while (m <= BOARD_SIZE_SQUARED)
+        {
             SHUFFLE_STEP(rng, m, perm[0], POS.v);
+        }
     }
 
     for (int g = lo; g < hi; g++)

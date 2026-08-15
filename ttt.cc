@@ -24,7 +24,6 @@
  * For more information, please refer to <https://unlicense.org/>
  */
 
-
 #include <chrono>
 #include <cstdint>
 #include <cstring>
@@ -178,7 +177,9 @@ Result play(const uint16_t *__restrict pos, uint16_t *__restrict out)
     for (int k = 0; k < BOARD_SIZE_SQUARED; k += CHUNK)
     {
         for (int c = 0; c < CHUNK; c++)
+        {
             SHUFFLE_STEP(rng, m, out, pt);
+        }
 
         for (int c = 0; c < CHUNK; c += 2)
         {
@@ -197,7 +198,9 @@ Result play(const uint16_t *__restrict pos, uint16_t *__restrict out)
 done:
     // A game that ended early still owes the rest of the permutation.
     while (m <= BOARD_SIZE_SQUARED)
+    {
         SHUFFLE_STEP(rng, m, out, pt);
+    }
 
     rng_state = rng;
     return r;
@@ -217,7 +220,9 @@ int main()
         uint64_t rng = rng_state;
         int m = 1;
         while (m <= BOARD_SIZE_SQUARED)
+        {
             SHUFFLE_STEP(rng, m, perm[0], POS.v);
+        }
         rng_state = rng;
     }
 
