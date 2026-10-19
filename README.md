@@ -37,24 +37,24 @@ The Lean row is not currently reproducible: `ttt.lean` does not compile. See
 Measured automatically by [`.github/workflows/bench.yml`](.github/workflows/bench.yml).
 
 <!-- BENCH:x64:START -->
-| Language | Best of 10 (ms) |
+| Language | Best of 5 (ms) |
 | -------- | ------------------- |
-| C++ (g++ 13.3.0) -O3 | 21 |
-| C (gcc 13.3.0) -O3 | 54 |
-| Rust (rustc 1.97.1) -O3 | 54 |
-| Go 1.24.2 (single-threaded) | 88 |
-| OCaml (ocamlopt flambda 5.3.0) -O3 | 175 |
-| JavaScript (node.js 23.9.0) | 190 |
-| Java (openjdk 24.0.2) | 352 |
-| Python (PyPy 7.3.23) | 837 |
-| Python (CPython 3.13.15) | 3064 |
+| C++ (g++ 13.3.0) -O3 | 15 |
+| Rust (rustc 1.99.0) -O3 | 41 |
+| C (gcc 13.3.0) -O3 | 43 |
+| Go 1.24.2 (single-threaded) | 84 |
+| OCaml (ocamlopt flambda 5.3.0) -O3 | 136 |
+| JavaScript (node.js 23.9.0) | 156 |
+| Java (openjdk 24.0.2) | 277 |
+| Python (PyPy 8.0.0) | 628 |
+| Python (CPython 3.13.16) | 2546 |
 
-- Not comparable, verified but excluded: C++ multi-threaded (g++ 13.3.0) -O3 — 11 ms on 4 cores
-- Not comparable, verified but excluded: C, 40x40 board (gcc 13.3.0) -O3 — 312 ms
+- Not comparable, verified but excluded: C++ multi-threaded (g++ 13.3.0) -O3 — 8 ms on 4 cores
+- Not comparable, verified but excluded: C, 40x40 board (gcc 13.3.0) -O3 — 274 ms
 
-Measured on `ubuntu-24.04` (AMD EPYC 7763 64-Core Processor, 4 cores), Linux 6.17.0-1022-azure, commit `0abf273`, 2026-08-15.
+Measured on `ubuntu-24.04` (AMD EPYC 9V74 80-Core Processor, 4 cores), Linux 6.17.0-1022-azure, commit `4a1d94e`, 2026-10-19.
 
-Best of 10 runs, pinned to a single core. Shared CI runners are noisy: treat differences under about 20% as
+Best of 5 runs, pinned to a single core. Shared CI runners are noisy: treat differences under about 20% as
 indistinguishable, and compare languages within a table rather than across
 tables or against the reference machine above.
 <!-- BENCH:x64:END -->
@@ -62,24 +62,24 @@ tables or against the reference machine above.
 ### GitHub Actions, aarch64
 
 <!-- BENCH:arm64:START -->
-| Language | Best of 10 (ms) |
+| Language | Best of 5 (ms) |
 | -------- | ------------------- |
 | C++ (g++ 13.3.0) -O3 | 23 |
-| Rust (rustc 1.97.1) -O3 | 35 |
+| Rust (rustc 1.99.0) -O3 | 35 |
 | C (gcc 13.3.0) -O3 | 40 |
 | Go 1.24.2 (single-threaded) | 78 |
 | JavaScript (node.js 23.9.0) | 178 |
-| Java (openjdk 24.0.2) | 268 |
-| OCaml (ocamlopt flambda 5.3.0) -O3 | 339 |
-| Python (PyPy 7.3.23) | 872 |
-| Python (CPython 3.13.15) | 2642 |
+| Java (openjdk 24.0.2) | 274 |
+| OCaml (ocamlopt flambda 5.3.0) -O3 | 344 |
+| Python (PyPy 8.0.1) | 914 |
+| Python (CPython 3.13.16) | 2650 |
 
 - Not comparable, verified but excluded: C++ multi-threaded (g++ 13.3.0) -O3 — 6 ms on 4 cores
 - Not comparable, verified but excluded: C, 40x40 board (gcc 13.3.0) -O3 — 271 ms
 
-Measured on `ubuntu-24.04-arm` (aarch64, 4 cores), Linux 6.17.0-1022-azure, commit `0abf273`, 2026-08-15.
+Measured on `ubuntu-24.04-arm` (aarch64, 4 cores), Linux 6.17.0-1022-azure, commit `4a1d94e`, 2026-10-19.
 
-Best of 10 runs, pinned to a single core. Shared CI runners are noisy: treat differences under about 20% as
+Best of 5 runs, pinned to a single core. Shared CI runners are noisy: treat differences under about 20% as
 indistinguishable, and compare languages within a table rather than across
 tables or against the reference machine above.
 <!-- BENCH:arm64:END -->
